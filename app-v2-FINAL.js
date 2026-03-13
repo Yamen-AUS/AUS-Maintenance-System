@@ -111,47 +111,29 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
-    console.log('🚀 Initializing AUS Maintenance System...');
-    
     // Initialize users if not exists
     if (!localStorage.getItem('users')) {
         localStorage.setItem('users', JSON.stringify(DEFAULT_USERS));
-        console.log('👤 Created default users');
     }
 
     // Check if already logged in
     const loggedInUser = localStorage.getItem('currentUser');
     if (loggedInUser) {
         currentUser = JSON.parse(loggedInUser);
-        console.log('✅ User already logged in:', currentUser.username);
         showApp();
     } else {
-        console.log('🔐 No user logged in - showing login page');
         showLoginPage();
     }
 
     // Initialize data if not exists
-    const existingTasks = localStorage.getItem('tasks');
-    if (!existingTasks) {
+    if (!localStorage.getItem('tasks')) {
         localStorage.setItem('tasks', JSON.stringify(SAMPLE_TASKS));
-        console.log('📋 Created sample tasks (', SAMPLE_TASKS.length, 'tasks)');
-    } else {
-        const tasks = JSON.parse(existingTasks);
-        console.log('✅ Loaded existing tasks from storage (', tasks.length, 'tasks)');
     }
-    
-    const existingVendors = localStorage.getItem('vendors');
-    if (!existingVendors) {
+    if (!localStorage.getItem('vendors')) {
         localStorage.setItem('vendors', JSON.stringify(SAMPLE_VENDORS));
-        console.log('🏢 Created sample vendors (', SAMPLE_VENDORS.length, 'vendors)');
-    } else {
-        const vendors = JSON.parse(existingVendors);
-        console.log('✅ Loaded existing vendors from storage (', vendors.length, 'vendors)');
     }
-    
     if (!localStorage.getItem('scheduleStatus')) {
         initializeScheduleStatus();
-        console.log('📅 Initialized schedule status');
     }
 
     // Login form
@@ -167,8 +149,6 @@ function initializeApp() {
 
     // Populate dropdowns
     populateDropdowns();
-    
-    console.log('✅ App initialization complete!');
 }
 
 function handleLogin(e) {
@@ -1154,34 +1134,12 @@ function exportData() {
 }
 
 function resetData() {
-    console.log('🔄 Reset Data button clicked');
-    
-    if (!confirm('This will delete all current data and restore sample data. Are you sure?')) {
-        console.log('❌ Reset cancelled by user');
-        return;
-    }
-    
-    console.log('✅ User confirmed - resetting data...');
-    
-    try {
-        // Reset to sample data
+    if (confirm('This will delete all current data and restore sample data. Are you sure?')) {
         localStorage.setItem('tasks', JSON.stringify(SAMPLE_TASKS));
         localStorage.setItem('vendors', JSON.stringify(SAMPLE_VENDORS));
         initializeScheduleStatus();
-        
-        console.log('✅ Data reset complete!');
-        console.log('📊 Sample tasks:', SAMPLE_TASKS.length);
-        console.log('🏢 Sample vendors:', SAMPLE_VENDORS.length);
-        
-        alert('✅ Data reset to sample data successfully!\n\n' +
-              'Tasks: ' + SAMPLE_TASKS.length + '\n' +
-              'Vendors: ' + SAMPLE_VENDORS.length + '\n\n' +
-              'Page will reload now.');
-        
+        alert('Data reset to sample data successfully!');
         location.reload();
-    } catch (error) {
-        console.error('❌ Reset error:', error);
-        alert('Error resetting data: ' + error.message);
     }
 }
 
@@ -1648,44 +1606,21 @@ function importData() {
             try {
                 const data = JSON.parse(event.target.result);
                 
-                console.log('📥 Importing data:', data);
-                
-                // Import tasks
-                if (data.tasks && Array.isArray(data.tasks)) {
+                if (data.tasks) {
                     localStorage.setItem('tasks', JSON.stringify(data.tasks));
-                    console.log('✅ Imported', data.tasks.length, 'tasks');
                 }
-                
-                // Import vendors
-                if (data.vendors && Array.isArray(data.vendors)) {
+                if (data.vendors) {
                     localStorage.setItem('vendors', JSON.stringify(data.vendors));
-                    console.log('✅ Imported', data.vendors.length, 'vendors');
                 }
-                
-                // Import schedule status
                 if (data.scheduleStatus) {
                     localStorage.setItem('scheduleStatus', JSON.stringify(data.scheduleStatus));
-                    console.log('✅ Imported schedule status');
                 }
                 
-                // Verify data was saved
-                const savedTasks = localStorage.getItem('tasks');
-                if (savedTasks) {
-                    console.log('✅ Data saved to localStorage successfully!');
-                    console.log('📊 Tasks in storage:', JSON.parse(savedTasks).length);
-                } else {
-                    console.error('❌ Failed to save tasks to localStorage!');
-                }
-                
-                alert('✅ Data imported successfully!\n\n' + 
-                      'Tasks: ' + (data.tasks?.length || 0) + '\n' +
-                      'Vendors: ' + (data.vendors?.length || 0) + '\n\n' +
-                      'Page will reload now.');
-                
+                alert('Data imported successfully!');
                 location.reload();
             } catch (error) {
-                console.error('❌ Import error:', error);
-                alert('Error importing data. Please check the file format.\n\nError: ' + error.message);
+                alert('Error importing data. Please check the file format.');
+                console.error(error);
             }
         };
         
@@ -1694,32 +1629,3 @@ function importData() {
     
     input.click();
 }
-
-// ========================================
-// MAKE FUNCTIONS GLOBALLY ACCESSIBLE
-// ========================================
-// Ensure critical functions are accessible from HTML onclick handlers
-window.resetData = resetData;
-window.exportData = exportData;
-window.importData = importData;
-window.addTask = addTask;
-window.saveUser = saveUser;
-window.saveVendor = saveVendor;
-window.addNewOption = addNewOption;
-window.openAddTaskModal = openAddTaskModal;
-window.openAddUserModal = openAddUserModal;
-window.openAddVendorModal = openAddVendorModal;
-window.closeTaskModal = closeTaskModal;
-window.closeUserModal = closeUserModal;
-window.closeVendorModal = closeVendorModal;
-
-console.log('✅ All functions exposed globally - Ready for use');
-
-// Verify critical functions
-setTimeout(() => {
-    console.log('🔍 Verifying functions...');
-    console.log('resetData:', typeof window.resetData === 'function' ? '✅' : '❌');
-    console.log('exportData:', typeof window.exportData === 'function' ? '✅' : '❌');
-    console.log('importData:', typeof window.importData === 'function' ? '✅' : '❌');
-    console.log('addTask:', typeof window.addTask === 'function' ? '✅' : '❌');
-}, 1000);

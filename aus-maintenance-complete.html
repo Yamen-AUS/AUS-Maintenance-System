@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUS Maintenance Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Calibri', sans-serif;
+            background: linear-gradient(135deg, #0D1B2A 0%, #1B3A5C 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* Login Page Styles */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0D1B2A 0%, #1B3A5C 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: rgba(37, 99, 168, 0.1);
+            border-radius: 50%;
+            top: -200px;
+            right: -200px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .login-container::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(37, 99, 168, 0.08);
+            border-radius: 50%;
+            bottom: -100px;
+            left: -100px;
+            animation: float 8s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        .login-box {
+            background: white;
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 420px;
+            max-width: 90%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-box .logo {
+            font-size: 48px;
+            color: #2563A8;
+            margin-bottom: 10px;
+        }
+
+        .login-box h1 {
+            color: #0D1B2A;
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .login-box .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #2563A8;
+            box-shadow: 0 0 0 4px rgba(37, 99, 168, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #2563A8 0%, #1B3A5C 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(37, 99, 168, 0.3);
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Main App Layout */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: #0D1B2A;
+            padding: 24px 0;
+            overflow-y: auto;
+            box-shadow: 4px 0 12px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            padding: 0 20px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 24px;
+        }
+
+        .sidebar-header h1 {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-header p {
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+        }
+
+        .user-info {
+            padding: 16px 20px;
+            background: rgba(37, 99, 168, 0.2);
+            margin: 0 12px 20px;
+            border-radius: 8px;
+        }
+
+        .user-info .username {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-info .role {
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0 12px;
+        }
+
+        .nav-item {
+            padding: 14px 16px;
+            margin-bottom: 6px;
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: rgba(37, 99, 168, 0.2);
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: #2563A8;
+            color: white;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .logout-btn {
+            margin: 20px 12px 0;
+            padding: 14px 16px;
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            width: calc(100% - 24px);
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 32px;
+            min-height: 100vh;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-header h2 {
+            color: white;
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: rgba(255,255,255,0.7);
+            font-size: 15px;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .kpi-card .kpi-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #0D1B2A;
+            margin-bottom: 4px;
+        }
+
+        .kpi-card .kpi-label {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .kpi-card .kpi-icon {
+            float: right;
+            font-size: 24px;
+            opacity: 0.2;
+        }
+
+        /* Cost Breakdown Cards */
+        .cost-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .cost-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #2563A8;
+        }
+
+        .cost-card.completed { border-left-color: #28a745; }
+        .cost-card.cancelled { border-left-color: #dc3545; }
+        .cost-card.onhold { border-left-color: #ffc107; }
+        .cost-card.pending { border-left-color: #6c757d; }
+        .cost-card.inprogress { border-left-color: #17a2b8; }
+
+        .cost-card .cost-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0D1B2A;
+            margin-bottom: 4px;
+        }
+
+        .cost-card .cost-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h3 {
+            color: #0D1B2A;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card canvas {
+            max-height: 300px;
+        }
+
+        /* Alerts Panel */
+        .alerts-panel {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 32px;
+        }
+
+        .alerts-panel h3 {
+            color: #0D1B2A;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .alert-item {
+            padding: 12px 16px;
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #721c24;
+        }
+
+        .alert-item.warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+
+        .alert-item.success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+
+        /* Task Table */
+        .toolbar {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .toolbar button, .toolbar input, .toolbar select {
+            padding: 10px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .toolbar button {
+            background: #2563A8;
+            color: white;
+            border-color: #2563A8;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toolbar button:hover {
+            background: #1B3A5C;
+            transform: translateY(-2px);
+        }
+
+        .toolbar input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .toolbar select {
+            background: white;
+        }
+
+        .task-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .task-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .task-table th {
+            background: #0D1B2A;
+            color: white;
+            padding: 14px 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .task-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+
+        .task-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .task-table tr.completed {
+            background: rgba(40, 167, 69, 0.05);
+        }
+
+        .task-table tr.overdue {
+            background: rgba(220, 53, 69, 0.05);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.critical { background: #dc3545; color: white; }
+        .badge.high { background: #fd7e14; color: white; }
+        .badge.medium { background: #ffc107; color: #333; }
+        .badge.low { background: #28a745; color: white; }
+
+        .badge.completed { background: #d4edda; color: #155724; }
+        .badge.in-progress { background: #cfe2ff; color: #084298; }
+        .badge.pending { background: #f8f9fa; color: #495057; }
+        .badge.cancelled { background: #f8d7da; color: #721c24; }
+        .badge.on-hold { background: #fff3cd; color: #856404; }
+
+        .health-score {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .health-score.high { background: #d4edda; color: #155724; }
+        .health-score.medium { background: #fff3cd; color: #856404; }
+        .health-score.low { background: #f8d7da; color: #721c24; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlide 0.3s ease-out;
+        }
+
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-content h3 {
+            color: #0D1B2A;
+            font-size: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            color: #333;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #2563A8;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+        }
+
+        .btn-primary, .btn-secondary {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #2563A8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1B3A5C;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .kpi-grid, .charts-grid, .cost-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div class="login-container" id="loginPage">
+        <div class="login-box">
+            <div class="logo">🏫</div>
+            <h1>Arab Unity School</h1>
+            <p class="subtitle">Maintenance Management System</p>
+            <form id="loginForm" onsubmit="return false;">
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="passwordInput" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="login-btn" onclick="handleLogin()">
+                    <span id="loginBtnText">Login</span>
+                    <div class="loading-spinner" id="loginSpinner"></div>
+                </button>
+                <div class="error-message" id="errorMessage">
+                    ❌ Incorrect password. Please try again.
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container" id="appContainer">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>🏫 AUS</h1>
+                <p>Maintenance System</p>
+            </div>
+            <div class="user-info">
+                <div class="username">Admin User</div>
+                <div class="role">Full Access</div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" onclick="switchPage('dashboard')">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </li>
+                <li class="nav-item" onclick="switchPage('tasks')">
+                    <i class="fas fa-tasks"></i> Task Tracker
+                </li>
+                <li class="nav-item" onclick="switchPage('schedule')">
+                    <i class="fas fa-calendar-alt"></i> Schedule
+                </li>
+                <li class="nav-item" onclick="switchPage('analytics')">
+                    <i class="fas fa-chart-bar"></i> Analytics
+                </li>
+                <li class="nav-item" onclick="switchPage('vendors')">
+                    <i class="fas fa-building"></i> Vendors
+                </li>
+                <li class="nav-item" onclick="switchPage('settings')">
+                    <i class="fas fa-cog"></i> Settings
+                </li>
+            </ul>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </aside>
+
+        <main class="main-content">
+            <!-- DASHBOARD PAGE -->
+            <div class="page active" id="dashboard">
+                <div class="page-header">
+                    <h2>📊 Dashboard</h2>
+                    <p>Overview of maintenance operations for AY 2025-26</p>
+                </div>
+
+                <!-- Main KPI Cards -->
+                <div class="kpi-grid" id="mainKpiGrid"></div>
+
+                <!-- Cost Breakdown -->
+                <h3 style="color:white; margin-bottom:16px; font-size:20px;">💰 Cost Breakdown by Status</h3>
+                <div class="cost-grid" id="costBreakdownGrid"></div>
+
+                <!-- Smart Alerts -->
+                <div class="alerts-panel" id="alertsPanel">
+                    <h3>🔔 Smart Alerts</h3>
+                    <div id="alertsList"></div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Task Status Distribution</h3>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Tasks by Category</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Tasks by Term</h3>
+                        <canvas id="termChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Monthly Completion Trend</h3>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TASK TRACKER PAGE -->
+            <div class="page" id="tasks">
+                <div class="page-header">
+                    <h2>📋 Task Tracker</h2>
+                    <p>Annual maintenance tasks database</p>
+                </div>
+
+                <div class="toolbar">
+                    <button onclick="openAddTaskModal()">
+                        <i class="fas fa-plus"></i> Add Task
+                    </button>
+                    <input type="text" id="searchBox" placeholder="🔍 Search tasks..." oninput="filterTasks()">
+                    <select id="filterTerm" onchange="filterTasks()">
+                        <option value="">All Terms</option>
+                        <option value="Term 1">Term 1 (Sep-Dec)</option>
+                        <option value="Term 2">Term 2 (Jan-Mar)</option>
+                        <option value="Term 3">Term 3 (Apr-Jun)</option>
+                        <option value="Summer">Summer (Jul-Aug)</option>
+                    </select>
+                    <select id="filterStatus" onchange="filterTasks()">
+                        <option value="">All Status</option>
+                        <option value="Completed">Completed</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Cancelled">Cancelled</option>
+                        <option value="On Hold">On Hold</option>
+                    </select>
+                    <select id="filterPriority" onchange="filterTasks()">
+                        <option value="">All Priority</option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                    <select id="filterCategory" onchange="filterTasks()">
+                        <option value="">All Categories</option>
+                    </select>
+                    <button onclick="exportToCSV()" style="background:#28a745;">
+                        <i class="fas fa-download"></i> Export CSV
+                    </button>
+                </div>
+
+                <div class="task-table" style="overflow-x:auto;">
+                    <table id="taskTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Task ID</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Location</th>
+                                <th>Term</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Assigned To</th>
+                                <th>Reported By</th>
+                                <th>Date Reported</th>
+                                <th>Due Date</th>
+                                <th>Date Completed</th>
+                                <th>Days to Close</th>
+                                <th>Cost (AED)</th>
+                                <th>Vendor</th>
+                                <th>Progress %</th>
+                                <th>Health Score</th>
+                                <th>Notes</th>
+                                <th>📎</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SCHEDULE PAGE -->
+            <div class="page" id="schedule">
+                <div class="page-header">
+                    <h2>📅 Maintenance Schedule</h2>
+                    <p>Annual and daily maintenance planning</p>
+                </div>
+                <div style="background:white; padding:24px; border-radius:12px; text-align:center;">
+                    <h3>Schedule Views</h3>
+                    <p style="color:#666; margin-top:12px;">Annual and Daily schedule views with 18 recurring tasks</p>
+                    <p style="color:#666; margin-top:8px; font-style:italic;">Feature implementation in progress - Full functionality coming soon!</p>
+                </div>
+            </div>
+
+            <!-- ANALYTICS PAGE -->
+            <div class="page" id="analytics">
+                <div class="page-header">
+                    <h2>📈 Analytics</h2>
+                    <p>Detailed performance metrics and insights</p>
+                </div>
+                <div id="analyticsContent"></div>
+            </div>
+
+            <!-- VENDORS PAGE -->
+            <div class="page" id="vendors">
+                <div class="page-header">
+                    <h2>🏢 Vendors</h2>
+                    <p>Vendor management and contacts</p>
+                </div>
+                <div id="vendorsContent"></div>
+            </div>
+
+            <!-- SETTINGS PAGE -->
+            <div class="page" id="settings">
+                <div class="page-header">
+                    <h2>⚙️ Settings</h2>
+                    <p>System configuration and preferences</p>
+                </div>
+                <div style="background:white; padding:32px; border-radius:12px;">
+                    <h3 style="color:#0D1B2A; margin-bottom:20px;">Change Password</h3>
+                    <div style="max-width:400px;">
+                        <div class="form-group" style="margin-bottom:16px;">
+                            <label>New Password</label>
+                            <input type="password" id="newPassword" placeholder="Enter new password">
+                        </div>
+                        <button class="btn-primary" onclick="changePassword()">Update Password</button>
+                    </div>
+                    <hr style="margin:32px 0; border:none; border-top:1px solid #e0e0e0;">
+                    <h3 style="color:#0D1B2A; margin-bottom:20px;">Data Management</h3>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <button class="btn-primary" onclick="exportAllData()">
+                            <i class="fas fa-download"></i> Export All Data (JSON)
+                        </button>
+                        <button class="btn-secondary" onclick="resetSampleData()">
+                            <i class="fas fa-redo"></i> Reset to Sample Data
+                        </button>
+                        <button style="background:#dc3545; color:white; padding:12px 24px; border:none; border-radius:8px; cursor:pointer; font-weight:600;" onclick="clearAllData()">
+                            <i class="fas fa-trash"></i> Clear All Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <h3 id="taskModalTitle">Add New Task</h3>
+            <form id="taskForm" onsubmit="return false;">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Task Title *</label>
+                        <input type="text" id="taskTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select id="taskCategory" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Location *</label>
+                        <select id="taskLocation" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Term *</label>
+                        <select id="taskTerm" required>
+                            <option value="Term 1">Term 1 (Sep-Dec)</option>
+                            <option value="Term 2">Term 2 (Jan-Mar)</option>
+                            <option value="Term 3">Term 3 (Apr-Jun)</option>
+                            <option value="Summer">Summer (Jul-Aug)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority *</label>
+                        <select id="taskPriority" required>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="taskStatus" required>
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="On Hold">On Hold</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Assigned To *</label>
+                        <select id="taskAssigned" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Reported By</label>
+                        <input type="text" id="taskReporter">
+                    </div>
+                    <div class="form-group">
+                        <label>Date Reported *</label>
+                        <input type="date" id="taskDateReported" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Due Date *</label>
+                        <input type="date" id="taskDueDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date Completed</label>
+                        <input type="date" id="taskDateCompleted">
+                    </div>
+                    <div class="form-group">
+                        <label>Cost (AED)</label>
+                        <input type="number" id="taskCost" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Vendor</label>
+                        <input type="text" id="taskVendor">
+                    </div>
+                    <div class="form-group">
+                        <label>Progress %</label>
+                        <input type="number" id="taskProgress" min="0" max="100" value="0">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Notes</label>
+                        <textarea id="taskNotes" rows="3"></textarea>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Attachment Link (URL)</label>
+                        <input type="url" id="taskAttachment" placeholder="https://...">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeTaskModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" onclick="saveTask()">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // CONSTANTS AND DATA
+        // ============================================================================
+
+        const CORRECT_PASSWORD = "AUS2026";
+        
+        const CATEGORIES = [
+            'Electrical', 'Plumbing', 'HVAC/AC', 'Civil/Building', 'Painting',
+            'IT/AV Equipment', 'Safety & Security', 'Pest Control', 'Landscaping',
+            'Furniture', 'Cleaning', 'Kitchen Equipment', 'Sports Facilities'
+        ];
+
+        const LOCATIONS = [
+            'Main Building', 'Block A – Boys', 'Block B – Boys', 'Block C – Boys',
+            'Block A – Girls', 'Block B – Girls', 'Block C – Girls',
+            'Primary Section', 'Secondary Boys', 'Secondary Girls',
+            'Science Lab', 'IT Lab', 'Library', 'Auditorium', 'Gym', 'Sports Hall',
+            'Swimming Pool', 'Playground', 'Canteen', 'Admin Office', 'Taher Hall',
+            'Outdoor Facilities', 'Parking Area'
+        ];
+
+        const ASSIGNED_TO = [
+            'Maintenance Team', 'HVAC Contractor', 'Electrical Team',
+            'Plumbing Team', 'IT Team', 'Cleaning Crew', 'External Vendor',
+            'Security Team', 'Landscaping Team'
+        ];
+
+        const SAMPLE_TASKS = [
+            { id: 'MNT-001', title: 'Fix broken ceiling tiles – Classroom B3', category: 'Civil/Building', location: 'Block A – Boys', term: 'Term 1', priority: 'High', status: 'Completed', assignedTo: 'Maintenance Team', reportedBy: 'Principal', dateReported: '2025-09-15', dueDate: '2025-09-25', dateCompleted: '2025-09-24', cost: 1200, vendor: 'Al Noor Contractors', progress: 100, notes: '3 tiles cracked, possible water leak above', attachment: '' },
+            { id: 'MNT-002', title: 'AC unit not cooling – Science Lab', category: 'HVAC/AC', location: 'Science Lab', term: 'Term 1', priority: 'Critical', status: 'Completed', assignedTo: 'HVAC Contractor', reportedBy: 'Vice Principal', dateReported: '2025-09-20', dueDate: '2025-09-22', dateCompleted: '2025-09-22', cost: 800, vendor: 'Cool Air Services', progress: 100, notes: 'Students complaining, class relocated', attachment: '' },
+            { id: 'MNT-003', title: 'Repaint exterior wall – Main entrance', category: 'Painting', location: 'Main Building', term: 'Term 1', priority: 'Medium', status: 'Completed', assignedTo: 'External Vendor', reportedBy: 'Head of Operations', dateReported: '2025-10-01', dueDate: '2025-10-20', dateCompleted: '2025-10-19', cost: 3500, vendor: 'BrightPaint LLC', progress: 100, notes: 'Scheduled during fall break', attachment: '' },
+            { id: 'MNT-004', title: 'Replace faulty electrical sockets – IT Lab', category: 'Electrical', location: 'IT Lab', term: 'Term 1', priority: 'High', status: 'Completed', assignedTo: 'Electrical Team', reportedBy: 'IT Manager', dateReported: '2025-10-10', dueDate: '2025-10-15', dateCompleted: '2025-10-14', cost: 450, vendor: 'Spark Electric Co.', progress: 100, notes: '6 sockets replaced, tested & approved', attachment: '' },
+            { id: 'MNT-005', title: 'Unclog drain – Boys toilets Block A', category: 'Plumbing', location: 'Block A – Boys', term: 'Term 1', priority: 'High', status: 'Completed', assignedTo: 'Plumbing Team', reportedBy: 'Facility Officer', dateReported: '2025-10-25', dueDate: '2025-10-26', dateCompleted: '2025-10-26', cost: 200, vendor: 'In-House', progress: 100, notes: 'Cleared, monitor weekly', attachment: '' },
+            { id: 'MNT-006', title: 'Install new projector – Auditorium', category: 'IT/AV Equipment', location: 'Auditorium', term: 'Term 1', priority: 'Medium', status: 'Completed', assignedTo: 'IT Team', reportedBy: 'Principal', dateReported: '2025-11-01', dueDate: '2025-11-15', dateCompleted: '2025-11-14', cost: 5800, vendor: 'TechVision UAE', progress: 100, notes: 'Equipment delivered and installed', attachment: '' },
+            { id: 'MNT-007', title: 'Replace broken fence panel – Playground', category: 'Civil/Building', location: 'Playground', term: 'Term 1', priority: 'Critical', status: 'Completed', assignedTo: 'Maintenance Team', reportedBy: 'Safety Officer', dateReported: '2025-11-10', dueDate: '2025-11-18', dateCompleted: '2025-11-17', cost: 950, vendor: 'SafeBuild Contractors', progress: 100, notes: 'Safety concern, urgent', attachment: '' },
+            { id: 'MNT-008', title: 'CCTV camera replacement – Block C corridor', category: 'Safety & Security', location: 'Block C – Boys', term: 'Term 1', priority: 'High', status: 'Completed', assignedTo: 'IT Team', reportedBy: 'Security Manager', dateReported: '2025-11-20', dueDate: '2025-12-05', dateCompleted: '2025-12-03', cost: 2100, vendor: 'SecureVision Systems', progress: 100, notes: '5 cameras replaced', attachment: '' },
+            { id: 'MNT-009', title: 'Pest control – Canteen & Storage', category: 'Pest Control', location: 'Canteen', term: 'Term 1', priority: 'High', status: 'Completed', assignedTo: 'External Vendor', reportedBy: 'Canteen Manager', dateReported: '2025-12-01', dueDate: '2025-12-08', dateCompleted: '2025-12-07', cost: 600, vendor: 'PestFree UAE', progress: 100, notes: 'Monthly scheduled treatment', attachment: '' },
+            { id: 'MNT-010', title: 'Repair water fountain – Main Building', category: 'Plumbing', location: 'Main Building', term: 'Term 1', priority: 'Medium', status: 'Completed', assignedTo: 'Plumbing Team', reportedBy: 'Facility Officer', dateReported: '2025-12-10', dueDate: '2025-12-20', dateCompleted: '2025-12-18', cost: 300, vendor: 'In-House', progress: 100, notes: 'Spare part arrived', attachment: '' },
+            { id: 'MNT-011', title: 'Fix gym floor tiles', category: 'Sports Facilities', location: 'Gym', term: 'Term 2', priority: 'High', status: 'Completed', assignedTo: 'Maintenance Team', reportedBy: 'PE Teacher', dateReported: '2026-01-15', dueDate: '2026-01-28', dateCompleted: '2026-01-27', cost: 2400, vendor: 'SafeBuild Contractors', progress: 100, notes: 'Tiles replaced and polished', attachment: '' },
+            { id: 'MNT-012', title: 'Emergency exit light replacement', category: 'Electrical', location: 'Block B – Girls', term: 'Term 2', priority: 'Critical', status: 'Completed', assignedTo: 'Electrical Team', reportedBy: 'Safety Officer', dateReported: '2026-01-20', dueDate: '2026-01-23', dateCompleted: '2026-01-22', cost: 650, vendor: 'Spark Electric Co.', progress: 100, notes: 'All units tested', attachment: '' },
+            { id: 'MNT-013', title: 'Swimming pool filter cleaning', category: 'Sports Facilities', location: 'Swimming Pool', term: 'Term 2', priority: 'Medium', status: 'Completed', assignedTo: 'External Vendor', reportedBy: 'Sports Coordinator', dateReported: '2026-02-01', dueDate: '2026-02-10', dateCompleted: '2026-02-09', cost: 800, vendor: 'AquaCare Services', progress: 100, notes: 'Routine maintenance', attachment: '' },
+            { id: 'MNT-014', title: 'Library AC servicing', category: 'HVAC/AC', location: 'Library', term: 'Term 2', priority: 'Medium', status: 'Completed', assignedTo: 'HVAC Contractor', reportedBy: 'Librarian', dateReported: '2026-02-15', dueDate: '2026-02-25', dateCompleted: '2026-02-24', cost: 1200, vendor: 'Cool Air Services', progress: 100, notes: 'Annual service completed', attachment: '' },
+            { id: 'MNT-015', title: 'Repair science lab sink', category: 'Plumbing', location: 'Science Lab', term: 'Term 3', priority: 'High', status: 'In Progress', assignedTo: 'Plumbing Team', reportedBy: 'Science Teacher', dateReported: '2026-03-05', dueDate: '2026-03-15', dateCompleted: '', cost: 400, vendor: 'In-House', progress: 60, notes: 'Parts ordered', attachment: '' },
+            { id: 'MNT-016', title: 'Replace classroom whiteboard', category: 'Furniture', location: 'Block C – Girls', term: 'Term 3', priority: 'Medium', status: 'Pending', assignedTo: 'Maintenance Team', reportedBy: 'Teacher', dateReported: '2026-03-08', dueDate: '2026-03-22', dateCompleted: '', cost: 850, vendor: 'Office Supplies Co.', progress: 0, notes: 'Awaiting approval', attachment: '' },
+            { id: 'MNT-017', title: 'Fix outdoor lighting – Parking', category: 'Electrical', location: 'Parking Area', term: 'Term 3', priority: 'High', status: 'Pending', assignedTo: 'Electrical Team', reportedBy: 'Security', dateReported: '2026-03-10', dueDate: '2026-03-18', dateCompleted: '', cost: 1100, vendor: 'Spark Electric Co.', progress: 0, notes: 'Safety concern at night', attachment: '' },
+            { id: 'MNT-018', title: 'Canteen refrigerator repair', category: 'Kitchen Equipment', location: 'Canteen', term: 'Term 3', priority: 'Critical', status: 'In Progress', assignedTo: 'External Vendor', reportedBy: 'Canteen Manager', dateReported: '2026-03-01', dueDate: '2026-03-08', dateCompleted: '', cost: 1500, vendor: 'CoolTech Appliances', progress: 70, notes: 'Technician scheduled tomorrow', attachment: '' },
+            { id: 'MNT-019', title: 'Paint girls toilets Block A', category: 'Painting', location: 'Block A – Girls', term: 'Term 3', priority: 'Medium', status: 'Pending', assignedTo: 'Maintenance Team', reportedBy: 'Facility Officer', dateReported: '2026-03-12', dueDate: '2026-04-05', dateCompleted: '', cost: 1800, vendor: 'BrightPaint LLC', progress: 0, notes: 'Scheduled for spring break', attachment: '' },
+            { id: 'MNT-020', title: 'CCTV maintenance – Main entrance', category: 'Safety & Security', location: 'Main Building', term: 'Term 3', priority: 'High', status: 'On Hold', assignedTo: 'IT Team', reportedBy: 'Security Manager', dateReported: '2026-03-02', dueDate: '2026-03-20', dateCompleted: '', cost: 900, vendor: 'SecureVision Systems', progress: 20, notes: 'Waiting for vendor availability', attachment: '' }
+        ];
+
+        const SAMPLE_VENDORS = [
+            { name: 'Al Noor Contractors', specialty: 'Civil/Building', contact: 'Mohammed Al Noor', phone: '+971 50 123 4567', email: 'info@alnoor.ae', contractExp: '2026-12-31', rating: '⭐⭐⭐⭐' },
+            { name: 'Cool Air Services', specialty: 'HVAC/AC', contact: 'Rajesh Kumar', phone: '+971 55 234 5678', email: 'service@coolair.ae', contractExp: '2026-06-30', rating: '⭐⭐⭐⭐⭐' },
+            { name: 'Spark Electric Co.', specialty: 'Electrical', contact: 'Ali Hassan', phone: '+971 52 345 6789', email: 'ali@sparkco.ae', contractExp: '2026-12-31', rating: '⭐⭐⭐⭐' },
+            { name: 'BrightPaint LLC', specialty: 'Painting', contact: 'James Wilson', phone: '+971 56 456 7890', email: 'james@brightpaint.ae', contractExp: '2026-08-31', rating: '⭐⭐⭐' },
+            { name: 'TechVision UAE', specialty: 'IT/AV Equipment', contact: 'Sara Al Mansoori', phone: '+971 50 567 8901', email: 'sara@techvision.ae', contractExp: '2026-09-30', rating: '⭐⭐⭐⭐⭐' },
+            { name: 'SafeBuild Contractors', specialty: 'Civil/Building', contact: 'Khalid Ibrahim', phone: '+971 54 678 9012', email: 'khalid@safebuild.ae', contractExp: '2027-02-28', rating: '⭐⭐⭐⭐' },
+            { name: 'SecureVision Systems', specialty: 'Safety & Security', contact: 'Omar Al Rashid', phone: '+971 55 789 0123', email: 'omar@securevision.ae', contractExp: '2026-07-31', rating: '⭐⭐⭐⭐' },
+            { name: 'PestFree UAE', specialty: 'Pest Control', contact: 'Ramesh Patel', phone: '+971 52 890 1234', email: 'info@pestfree.ae', contractExp: '2027-03-31', rating: '⭐⭐⭐' },
+            { name: 'In-House Maintenance', specialty: 'General', contact: 'Ahmed Al Farsi', phone: 'Extension 101', email: 'maintenance@aus.ae', contractExp: 'N/A', rating: '⭐⭐⭐⭐⭐' },
+            { name: 'AquaCare Services', specialty: 'Swimming Pool', contact: 'David Smith', phone: '+971 50 111 2222', email: 'david@aquacare.ae', contractExp: '2026-12-31', rating: '⭐⭐⭐⭐' },
+            { name: 'Office Supplies Co.', specialty: 'Furniture', contact: 'Fatima Al Ali', phone: '+971 54 333 4444', email: 'fatima@officesupplies.ae', contractExp: '2026-11-30', rating: '⭐⭐⭐' },
+            { name: 'CoolTech Appliances', specialty: 'Kitchen Equipment', contact: 'John Doe', phone: '+971 52 555 6666', email: 'john@cooltech.ae', contractExp: '2026-10-31', rating: '⭐⭐⭐⭐' }
+        ];
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            // Check if already logged in
+            if (localStorage.getItem('loggedIn') === 'true') {
+                showApp();
+            } else {
+                showLoginPage();
+            }
+
+            // Initialize data if not exists
+            if (!localStorage.getItem('tasks')) {
+                localStorage.setItem('tasks', JSON.stringify(SAMPLE_TASKS));
+            }
+            if (!localStorage.getItem('vendors')) {
+                localStorage.setItem('vendors', JSON.stringify(SAMPLE_VENDORS));
+            }
+
+            // Populate dropdowns
+            populateDropdowns();
+        }
+
+        function populateDropdowns() {
+            // Category dropdown
+            const categorySelects = ['taskCategory', 'filterCategory'];
+            categorySelects.forEach(id => {
+                const select = document.getElementById(id);
+                if (select && select.options.length <= 1) {
+                    CATEGORIES.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat;
+                        option.textContent = cat;
+                        select.appendChild(option);
+                    });
+                }
+            });
+
+            // Location dropdown
+            const locationSelect = document.getElementById('taskLocation');
+            if (locationSelect && locationSelect.options.length === 0) {
+                LOCATIONS.forEach(loc => {
+                    const option = document.createElement('option');
+                    option.value = loc;
+                    option.textContent = loc;
+                    locationSelect.appendChild(option);
+                });
+            }
+
+            // Assigned To dropdown
+            const assignedSelect = document.getElementById('taskAssigned');
+            if (assignedSelect && assignedSelect.options.length === 0) {
+                ASSIGNED_TO.forEach(person => {
+                    const option = document.createElement('option');
+                    option.value = person;
+                    option.textContent = person;
+                    assignedSelect.appendChild(option);
+                });
+            }
+        }
+
+        // ============================================================================
+        // LOGIN / LOGOUT
+        // ============================================================================
+
+        function handleLogin() {
+            const password = document.getElementById('passwordInput').value;
+            const errorMsg = document.getElementById('errorMessage');
+            const btnText = document.getElementById('loginBtnText');
+            const spinner = document.getElementById('loginSpinner');
+
+            if (password === CORRECT_PASSWORD) {
+                btnText.style.display = 'none';
+                spinner.style.display = 'inline-block';
+                
+                setTimeout(() => {
+                    localStorage.setItem('loggedIn', 'true');
+                    showApp();
+                }, 1000);
+            } else {
+                errorMsg.style.display = 'block';
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('loggedIn');
+            showLoginPage();
+        }
+
+        function showLoginPage() {
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('loginBtnText').style.display = 'inline';
+            document.getElementById('loginSpinner').style.display = 'none';
+        }
+
+        function showApp() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            switchPage('dashboard');
+        }
+
+        // ============================================================================
+        // NAVIGATION
+        // ============================================================================
+
+        function switchPage(pageName) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            // Show selected page
+            document.getElementById(pageName).classList.add('active');
+
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            const activeItem = Array.from(document.querySelectorAll('.nav-item')).find(item => 
+                item.textContent.toLowerCase().includes(pageName.toLowerCase())
+            );
+            if (activeItem) activeItem.classList.add('active');
+
+            // Load page data
+            switch(pageName) {
+                case 'dashboard':
+                    renderDashboard();
+                    break;
+                case 'tasks':
+                    renderTaskTable();
+                    break;
+                case 'analytics':
+                    renderAnalytics();
+                    break;
+                case 'vendors':
+                    renderVendors();
+                    break;
+            }
+        }
+
+        // ============================================================================
+        // DASHBOARD FUNCTIONS
+        // ============================================================================
+
+        function renderDashboard() {
+            const tasks = getTasks();
+            
+            // Calculate Main KPIs
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.status === 'Completed').length;
+            const inProgress = tasks.filter(t => t.status === 'In Progress').length;
+            const pending = tasks.filter(t => t.status === 'Pending').length;
+            const overdue = tasks.filter(t => isOverdue(t)).length;
+            const criticalPending = tasks.filter(t => t.status === 'Pending' && t.priority === 'Critical').length;
+            const totalCost = tasks.reduce((sum, t) => sum + (t.cost || 0), 0);
+
+            // Main KPI Cards
+            const mainKpis = [
+                { value: total, label: 'Total Tasks', icon: 'fa-tasks', color: '#2563A8' },
+                { value: completed, label: 'Completed', icon: 'fa-check-circle', color: '#28a745' },
+                { value: inProgress, label: 'In Progress', icon: 'fa-spinner', color: '#17a2b8' },
+                { value: pending, label: 'Pending', icon: 'fa-clock', color: '#6c757d' },
+                { value: overdue, label: 'Overdue', icon: 'fa-exclamation-triangle', color: '#dc3545' },
+                { value: criticalPending, label: 'Critical Pending', icon: 'fa-fire', color: '#fd7e14' },
+                { value: totalCost.toLocaleString() + ' AED', label: 'Total Cost', icon: 'fa-dollar-sign', color: '#ffc107' }
+            ];
+
+            let kpiHtml = '';
+            mainKpis.forEach(kpi => {
+                kpiHtml += `<div class="kpi-card">
+                    <i class="fas ${kpi.icon} kpi-icon" style="color:${kpi.color}"></i>
+                    <div class="kpi-value" style="color:${kpi.color}">${kpi.value}</div>
+                    <div class="kpi-label">${kpi.label}</div>
+                </div>`;
+            });
+            document.getElementById('mainKpiGrid').innerHTML = kpiHtml;
+
+            // Cost Breakdown by Status
+            const completedCost = tasks.filter(t => t.status === 'Completed').reduce((sum, t) => sum + (t.cost || 0), 0);
+            const inProgressCost = tasks.filter(t => t.status === 'In Progress').reduce((sum, t) => sum + (t.cost || 0), 0);
+            const pendingCost = tasks.filter(t => t.status === 'Pending').reduce((sum, t) => sum + (t.cost || 0), 0);
+            const cancelledCost = tasks.filter(t => t.status === 'Cancelled').reduce((sum, t) => sum + (t.cost || 0), 0);
+            const onHoldCost = tasks.filter(t => t.status === 'On Hold').reduce((sum, t) => sum + (t.cost || 0), 0);
+
+            const costBreakdown = [
+                { label: 'Total Cost', value: totalCost, class: 'total' },
+                { label: 'Completed', value: completedCost, class: 'completed' },
+                { label: 'In Progress', value: inProgressCost, class: 'inprogress' },
+                { label: 'Pending', value: pendingCost, class: 'pending' },
+                { label: 'On Hold', value: onHoldCost, class: 'onhold' },
+                { label: 'Cancelled', value: cancelledCost, class: 'cancelled' }
+            ];
+
+            let costHtml = '';
+            costBreakdown.forEach(item => {
+                costHtml += `<div class="cost-card ${item.class}">
+                    <div class="cost-value">${item.value.toLocaleString()} AED</div>
+                    <div class="cost-label">${item.label}</div>
+                </div>`;
+            });
+            document.getElementById('costBreakdownGrid').innerHTML = costHtml;
+
+            // Smart Alerts
+            renderSmartAlerts();
+
+            // Charts
+            renderStatusChart();
+            renderCategoryChart();
+            renderTermChart();
+            renderTrendChart();
+        }
+
+        function renderSmartAlerts() {
+            const tasks = getTasks();
+            const alerts = [];
+
+            // Overdue tasks
+            const overdue = tasks.filter(t => isOverdue(t));
+            if (overdue.length > 0) {
+                alerts.push(`⚠️ ${overdue.length} task(s) are overdue!`);
+            }
+
+            // Critical pending
+            const criticalPending = tasks.filter(t => t.status === 'Pending' && t.priority === 'Critical');
+            if (criticalPending.length > 0) {
+                alerts.push(`🔴 ${criticalPending.length} critical task(s) are pending!`);
+            }
+
+            // Low completion rate
+            const completionRate = (tasks.filter(t => t.status === 'Completed').length / tasks.length) * 100;
+            if (completionRate < 75) {
+                alerts.push(`📉 Completion rate (${Math.round(completionRate)}%) is below target (75%)`);
+            }
+
+            // On Hold tasks
+            const onHold = tasks.filter(t => t.status === 'On Hold');
+            if (onHold.length > 0) {
+                alerts.push(`⏸️ ${onHold.length} task(s) are on hold`);
+            }
+
+            let alertHtml = '';
+            if (alerts.length === 0) {
+                alertHtml = '<div class="alert-item success">✅ All systems running smoothly! No alerts.</div>';
+            } else {
+                alerts.forEach(alert => {
+                    const className = alert.includes('✅') ? 'success' : alert.includes('📉') ? 'warning' : '';
+                    alertHtml += `<div class="alert-item ${className}">${alert}</div>`;
+                });
+            }
+
+            document.getElementById('alertsList').innerHTML = alertHtml;
+        }
+
+        function renderStatusChart() {
+            const ctx = document.getElementById('statusChart');
+            const tasks = getTasks();
+            
+            const statusCount = {
+                'Completed': tasks.filter(t => t.status === 'Completed').length,
+                'In Progress': tasks.filter(t => t.status === 'In Progress').length,
+                'Pending': tasks.filter(t => t.status === 'Pending').length,
+                'Cancelled': tasks.filter(t => t.status === 'Cancelled').length,
+                'On Hold': tasks.filter(t => t.status === 'On Hold').length
+            };
+
+            if (window.statusChartInstance) window.statusChartInstance.destroy();
+            window.statusChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusCount),
+                    datasets: [{
+                        data: Object.values(statusCount),
+                        backgroundColor: ['#28a745', '#17a2b8', '#6c757d', '#dc3545', '#ffc107']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function renderCategoryChart() {
+            const ctx = document.getElementById('categoryChart');
+            const tasks = getTasks();
+            
+            const categoryCount = {};
+            CATEGORIES.forEach(cat => {
+                categoryCount[cat] = tasks.filter(t => t.category === cat).length;
+            });
+
+            if (window.categoryChartInstance) window.categoryChartInstance.destroy();
+            window.categoryChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(categoryCount),
+                    datasets: [{
+                        label: 'Tasks',
+                        data: Object.values(categoryCount),
+                        backgroundColor: '#2563A8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderTermChart() {
+            const ctx = document.getElementById('termChart');
+            const tasks = getTasks();
+            
+            const termColors = {
+                'Term 1': '#9333ea',
+                'Term 2': '#14b8a6',
+                'Term 3': '#eab308',
+                'Summer': '#22c55e'
+            };
+
+            const termCount = {
+                'Term 1': tasks.filter(t => t.term === 'Term 1').length,
+                'Term 2': tasks.filter(t => t.term === 'Term 2').length,
+                'Term 3': tasks.filter(t => t.term === 'Term 3').length,
+                'Summer': tasks.filter(t => t.term === 'Summer').length
+            };
+
+            if (window.termChartInstance) window.termChartInstance.destroy();
+            window.termChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(termCount),
+                    datasets: [{
+                        label: 'Tasks',
+                        data: Object.values(termCount),
+                        backgroundColor: Object.values(termColors)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderTrendChart() {
+            const ctx = document.getElementById('trendChart');
+            const tasks = getTasks();
+            
+            const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+            const completedByMonth = new Array(12).fill(0);
+
+            tasks.filter(t => t.dateCompleted).forEach(t => {
+                const date = new Date(t.dateCompleted);
+                let monthIndex = date.getMonth();
+                if (monthIndex >= 8) monthIndex -= 8;
+                else monthIndex += 4;
+                completedByMonth[monthIndex]++;
+            });
+
+            if (window.trendChartInstance) window.trendChartInstance.destroy();
+            window.trendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Completed Tasks',
+                        data: completedByMonth,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // ============================================================================
+        // TASK TRACKER FUNCTIONS
+        // ============================================================================
+
+        function getTasks() {
+            const tasks = localStorage.getItem('tasks');
+            return tasks ? JSON.parse(tasks) : [];
+        }
+
+        function saveTasks(tasks) {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function renderTaskTable() {
+            const tasks = getTasks();
+            let html = '';
+            
+            tasks.forEach((task, index) => {
+                const rowClass = task.status === 'Completed' ? 'completed' : (isOverdue(task) ? 'overdue' : '');
+                const healthScore = calculateHealthScore(task);
+                const healthClass = healthScore >= 70 ? 'high' : healthScore >= 40 ? 'medium' : 'low';
+                const daysToClose = task.dateCompleted ? calculateDaysToClose(task) : '-';
+
+                html += `<tr class="${rowClass}">
+                    <td>${index + 1}</td>
+                    <td><strong>${task.id}</strong></td>
+                    <td>${task.title}</td>
+                    <td>${task.category}</td>
+                    <td>${task.location}</td>
+                    <td>${task.term}</td>
+                    <td><span class="badge ${task.priority.toLowerCase()}">${task.priority}</span></td>
+                    <td><span class="badge ${task.status.toLowerCase().replace(' ', '-')}">${task.status}</span></td>
+                    <td>${task.assignedTo}</td>
+                    <td>${task.reportedBy || '-'}</td>
+                    <td>${task.dateReported}</td>
+                    <td>${task.dueDate}</td>
+                    <td>${task.dateCompleted || '-'}</td>
+                    <td>${daysToClose}</td>
+                    <td>${task.cost ? task.cost.toLocaleString() : '0'}</td>
+                    <td>${task.vendor || '-'}</td>
+                    <td>${task.progress}%</td>
+                    <td><span class="health-score ${healthClass}">${healthScore}</span></td>
+                    <td style="max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${task.notes}">${task.notes || '-'}</td>
+                    <td>${task.attachment ? '<a href="' + task.attachment + '" target="_blank">🔗</a>' : '-'}</td>
+                    <td>
+                        <button onclick="editTask(${index})" style="padding:4px 8px; background:#17a2b8; color:white; border:none; border-radius:4px; cursor:pointer; margin-right:4px; font-size:11px;">Edit</button>
+                        <button onclick="deleteTask(${index})" style="padding:4px 8px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer; font-size:11px;">Delete</button>
+                    </td>
+                </tr>`;
+            });
+
+            document.getElementById('taskTableBody').innerHTML = html;
+        }
+
+        function filterTasks() {
+            const search = document.getElementById('searchBox').value.toLowerCase();
+            const filterTerm = document.getElementById('filterTerm').value;
+            const filterStatus = document.getElementById('filterStatus').value;
+            const filterPriority = document.getElementById('filterPriority').value;
+            const filterCategory = document.getElementById('filterCategory').value;
+
+            const tasks = getTasks();
+            const filtered = tasks.filter(task => {
+                const matchSearch = task.title.toLowerCase().includes(search) || task.id.toLowerCase().includes(search);
+                const matchTerm = !filterTerm || task.term === filterTerm;
+                const matchStatus = !filterStatus || task.status === filterStatus;
+                const matchPriority = !filterPriority || task.priority === filterPriority;
+                const matchCategory = !filterCategory || task.category === filterCategory;
+
+                return matchSearch && matchTerm && matchStatus && matchPriority && matchCategory;
+            });
+
+            let html = '';
+            filtered.forEach((task, index) => {
+                const actualIndex = tasks.indexOf(task);
+                const rowClass = task.status === 'Completed' ? 'completed' : (isOverdue(task) ? 'overdue' : '');
+                const healthScore = calculateHealthScore(task);
+                const healthClass = healthScore >= 70 ? 'high' : healthScore >= 40 ? 'medium' : 'low';
+                const daysToClose = task.dateCompleted ? calculateDaysToClose(task) : '-';
+
+                html += `<tr class="${rowClass}">
+                    <td>${index + 1}</td>
+                    <td><strong>${task.id}</strong></td>
+                    <td>${task.title}</td>
+                    <td>${task.category}</td>
+                    <td>${task.location}</td>
+                    <td>${task.term}</td>
+                    <td><span class="badge ${task.priority.toLowerCase()}">${task.priority}</span></td>
+                    <td><span class="badge ${task.status.toLowerCase().replace(' ', '-')}">${task.status}</span></td>
+                    <td>${task.assignedTo}</td>
+                    <td>${task.reportedBy || '-'}</td>
+                    <td>${task.dateReported}</td>
+                    <td>${task.dueDate}</td>
+                    <td>${task.dateCompleted || '-'}</td>
+                    <td>${daysToClose}</td>
+                    <td>${task.cost ? task.cost.toLocaleString() : '0'}</td>
+                    <td>${task.vendor || '-'}</td>
+                    <td>${task.progress}%</td>
+                    <td><span class="health-score ${healthClass}">${healthScore}</span></td>
+                    <td style="max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${task.notes}">${task.notes || '-'}</td>
+                    <td>${task.attachment ? '<a href="' + task.attachment + '" target="_blank">🔗</a>' : '-'}</td>
+                    <td>
+                        <button onclick="editTask(${actualIndex})" style="padding:4px 8px; background:#17a2b8; color:white; border:none; border-radius:4px; cursor:pointer; margin-right:4px; font-size:11px;">Edit</button>
+                        <button onclick="deleteTask(${actualIndex})" style="padding:4px 8px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer; font-size:11px;">Delete</button>
+                    </td>
+                </tr>`;
+            });
+
+            document.getElementById('taskTableBody').innerHTML = html;
+        }
+
+        function isOverdue(task) {
+            if (task.status === 'Completed' || task.status === 'Cancelled') return false;
+            const today = new Date();
+            const dueDate = new Date(task.dueDate);
+            return dueDate < today;
+        }
+
+        function calculateHealthScore(task) {
+            let score = 100;
+            
+            if (isOverdue(task)) score -= 30;
+            if (task.status === 'Pending' && task.priority === 'Critical') score -= 20;
+            if (task.status === 'On Hold') score -= 15;
+            if (task.progress < 50 && task.status === 'In Progress') score -= 10;
+            
+            return Math.max(0, score);
+        }
+
+        function calculateDaysToClose(task) {
+            if (!task.dateCompleted || !task.dateReported) return '-';
+            const reported = new Date(task.dateReported);
+            const completed = new Date(task.dateCompleted);
+            const days = Math.ceil((completed - reported) / (1000 * 60 * 60 * 24));
+            return days;
+        }
+
+        function openAddTaskModal() {
+            document.getElementById('taskModal').classList.add('active');
+            document.getElementById('taskModalTitle').textContent = 'Add New Task';
+            document.getElementById('taskForm').reset();
+            document.getElementById('taskDateReported').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('active');
+        }
+
+        function saveTask() {
+            const tasks = getTasks();
+            const newId = `MNT-${String(tasks.length + 1).padStart(3, '0')}`;
+
+            const newTask = {
+                id: newId,
+                title: document.getElementById('taskTitle').value,
+                category: document.getElementById('taskCategory').value,
+                location: document.getElementById('taskLocation').value,
+                term: document.getElementById('taskTerm').value,
+                priority: document.getElementById('taskPriority').value,
+                status: document.getElementById('taskStatus').value,
+                assignedTo: document.getElementById('taskAssigned').value,
+                reportedBy: document.getElementById('taskReporter').value,
+                dateReported: document.getElementById('taskDateReported').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                dateCompleted: document.getElementById('taskDateCompleted').value,
+                cost: parseFloat(document.getElementById('taskCost').value) || 0,
+                vendor: document.getElementById('taskVendor').value,
+                progress: parseInt(document.getElementById('taskProgress').value) || 0,
+                notes: document.getElementById('taskNotes').value,
+                attachment: document.getElementById('taskAttachment').value
+            };
+
+            tasks.push(newTask);
+            saveTasks(tasks);
+            closeTaskModal();
+            renderTaskTable();
+            renderDashboard();
+        }
+
+        function editTask(index) {
+            alert('Edit functionality - Coming soon!');
+        }
+
+        function deleteTask(index) {
+            if (!confirm('Delete this task?')) return;
+            const tasks = getTasks();
+            tasks.splice(index, 1);
+            saveTasks(tasks);
+            renderTaskTable();
+            renderDashboard();
+        }
+
+        function exportToCSV() {
+            const tasks = getTasks();
+            let csv = 'Task ID,Title,Category,Location,Term,Priority,Status,Assigned To,Reported By,Date Reported,Due Date,Date Completed,Days to Close,Cost,Vendor,Progress,Health Score,Notes,Attachment\n';
+            
+            tasks.forEach(task => {
+                const healthScore = calculateHealthScore(task);
+                const daysToClose = task.dateCompleted ? calculateDaysToClose(task) : '';
+                csv += `"${task.id}","${task.title}","${task.category}","${task.location}","${task.term}","${task.priority}","${task.status}","${task.assignedTo}","${task.reportedBy || ''}","${task.dateReported}","${task.dueDate}","${task.dateCompleted || ''}","${daysToClose}","${task.cost}","${task.vendor || ''}","${task.progress}","${healthScore}","${task.notes || ''}","${task.attachment || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'AUS_Tasks_Export.csv';
+            a.click();
+        }
+
+        // ============================================================================
+        // ANALYTICS FUNCTIONS
+        // ============================================================================
+
+        function renderAnalytics() {
+            const content = document.getElementById('analyticsContent');
+            content.innerHTML = `
+                <div style="background:white; padding:32px; border-radius:12px; text-align:center;">
+                    <h3 style="color:#0D1B2A; margin-bottom:16px;">📊 Analytics Dashboard</h3>
+                    <p style="color:#666;">Detailed analytics including completion rates, vendor performance, top expensive tasks, and term comparisons</p>
+                    <p style="color:#666; margin-top:12px; font-style:italic;">Full analytics implementation in progress - Coming soon!</p>
+                </div>
+            `;
+        }
+
+        // ============================================================================
+        // VENDORS FUNCTIONS
+        // ============================================================================
+
+        function renderVendors() {
+            const vendors = JSON.parse(localStorage.getItem('vendors')) || [];
+            let html = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">';
+            
+            vendors.forEach(vendor => {
+                html += `<div style="background:white; padding:24px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); transition:all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <h4 style="color:#0D1B2A; font-size:18px; margin-bottom:8px;">${vendor.name}</h4>
+                    <div style="color:#2563A8; font-size:14px; font-weight:600; margin-bottom:12px;">${vendor.specialty}</div>
+                    <div style="color:#666; font-size:13px; margin-bottom:4px;"><strong>Contact:</strong> ${vendor.contact}</div>
+                    <div style="color:#666; font-size:13px; margin-bottom:4px;"><strong>Phone:</strong> ${vendor.phone}</div>
+                    <div style="color:#666; font-size:13px; margin-bottom:4px;"><strong>Email:</strong> ${vendor.email}</div>
+                    <div style="color:#666; font-size:13px; margin-bottom:8px;"><strong>Contract Exp:</strong> ${vendor.contractExp}</div>
+                    <div style="color:#ffc107; font-size:16px;">${vendor.rating}</div>
+                </div>`;
+            });
+            
+            html += '</div>';
+            document.getElementById('vendorsContent').innerHTML = html;
+        }
+
+        // ============================================================================
+        // SETTINGS FUNCTIONS
+        // ============================================================================
+
+        function changePassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            if (newPassword.length < 4) {
+                alert('Password must be at least 4 characters!');
+                return;
+            }
+            alert('Password change functionality - Coming soon!\n\nYour new password: ' + newPassword);
+        }
+
+        function exportAllData() {
+            const data = {
+                tasks: getTasks(),
+                vendors: JSON.parse(localStorage.getItem('vendors')) || [],
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'AUS_Complete_Data_Export.json';
+            a.click();
+        }
+
+        function resetSampleData() {
+            if (!confirm('Reset all data to sample data? This will delete current tasks.')) return;
+            localStorage.setItem('tasks', JSON.stringify(SAMPLE_TASKS));
+            localStorage.setItem('vendors', JSON.stringify(SAMPLE_VENDORS));
+            alert('✅ Sample data restored!');
+            renderTaskTable();
+            renderDashboard();
+        }
+
+        function clearAllData() {
+            if (!confirm('Delete ALL data? This cannot be undone!')) return;
+            localStorage.clear();
+            alert('✅ All data cleared!');
+            location.reload();
+        }
+    </script>
+</body>
+</html>

@@ -1059,12 +1059,12 @@ function renderVendors() {
 }
 
 function openAddVendorModal() {
-    document.getElementById('addVendorModal').classList.add('active');
+    document.getElementById('vendorModal').classList.add('active');
 }
 
 function closeVendorModal() {
-    document.getElementById('addVendorModal').classList.remove('active');
-    document.getElementById('addVendorForm').reset();
+    document.getElementById('vendorModal').classList.remove('active');
+    document.getElementById('vendorForm').reset();
 }
 
 function addVendor() {
@@ -1086,6 +1086,10 @@ function addVendor() {
     closeVendorModal();
     renderVendors();
     alert('Vendor added successfully!');
+}
+
+function saveVendor() {
+    addVendor();
 }
 
 function deleteVendor(index) {
@@ -1423,27 +1427,31 @@ function renderManageUsers() {
     }
     
     const users = getUsers();
-    let html = '<div style="margin-top:20px;"><table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#2563A8; color:white;"><th style="padding:12px; text-align:left;">Username</th><th>Role</th><th>Permissions</th><th>Actions</th></tr></thead><tbody>';
+    let html = '<div style="margin-top:20px;"><table style="width:100%; border-collapse:collapse; background:white; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1);"><thead><tr style="background:#2563A8; color:white;"><th style="padding:16px; text-align:left;">Username</th><th style="padding:16px;">Role</th><th style="padding:16px;">Permissions</th><th style="padding:16px;">Actions</th></tr></thead><tbody>';
     
     users.forEach((user, index) => {
         const permissions = Object.keys(user.permissions).filter(p => user.permissions[p]).join(', ');
         html += `
             <tr style="border-bottom:1px solid #e0e0e0;">
-                <td style="padding:12px;"><strong>${user.username}</strong></td>
-                <td>${user.role}</td>
-                <td style="font-size:12px;">${permissions}</td>
-                <td><button onclick="deleteUser(${index})" style="padding:6px 12px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button></td>
+                <td style="padding:16px;"><strong>${user.username}</strong></td>
+                <td style="padding:16px; text-align:center;"><span style="background:#e3f2fd; padding:6px 12px; border-radius:20px; font-size:13px;">${user.role}</span></td>
+                <td style="padding:16px; font-size:12px; color:#666;">${permissions}</td>
+                <td style="padding:16px; text-align:center;"><button onclick="deleteUser(${index})" style="padding:8px 16px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer;">Delete</button></td>
             </tr>
         `;
     });
     
     html += '</tbody></table></div>';
     
-    document.getElementById('usersTable').innerHTML = html;
+    document.getElementById('usersList').innerHTML = html;
 }
 
 function openUserModal() {
     document.getElementById('userModal').classList.add('active');
+}
+
+function openAddUserModal() {
+    openUserModal();
 }
 
 function closeUserModal() {
@@ -1453,8 +1461,8 @@ function closeUserModal() {
 
 function saveUser() {
     const username = document.getElementById('newUsername').value.trim();
-    const password = document.getElementById('newUserPassword').value;
-    const role = document.getElementById('newUserRole').value;
+    const password = document.getElementById('newPassword').value;
+    const role = document.getElementById('newRole').value;
     
     if (!username || !password) {
         alert('Please enter username and password.');
@@ -1509,36 +1517,115 @@ function deleteUser(index) {
 
 // ========== SETTINGS PAGE RENDER ==========
 function renderSettings() {
-    // Cost breakdown is already handled in Dashboard
-    // Settings page can show categories, locations, teams
-    
-    let html = '<div style="margin-top:20px;">';
-    
-    html += '<div style="background:white; padding:24px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:20px;">';
-    html += '<h3 style="margin-top:0;">System Categories</h3>';
-    html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
-    CATEGORIES.forEach(cat => {
-        html += `<span style="background:#e3f2fd; padding:8px 16px; border-radius:20px; font-size:14px;">${cat}</span>`;
+    // Render Categories
+    let categoryHTML = '';
+    CATEGORIES.forEach((cat, index) => {
+        categoryHTML += `<div class="option-item">${cat} <button onclick="removeOption('category', ${index})">×</button></div>`;
     });
-    html += '</div></div>';
+    document.getElementById('categoryOptions').innerHTML = categoryHTML;
     
-    html += '<div style="background:white; padding:24px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:20px;">';
-    html += '<h3 style="margin-top:0;">Locations</h3>';
-    html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
-    LOCATIONS.forEach(loc => {
-        html += `<span style="background:#fff3e0; padding:8px 16px; border-radius:20px; font-size:14px;">${loc}</span>`;
+    // Render Locations
+    let locationHTML = '';
+    LOCATIONS.forEach((loc, index) => {
+        locationHTML += `<div class="option-item">${loc} <button onclick="removeOption('location', ${index})">×</button></div>`;
     });
-    html += '</div></div>';
+    document.getElementById('locationOptions').innerHTML = locationHTML;
     
-    html += '<div style="background:white; padding:24px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">';
-    html += '<h3 style="margin-top:0;">Teams</h3>';
-    html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
-    ASSIGNED_TO.forEach(team => {
-        html += `<span style="background:#e8f5e9; padding:8px 16px; border-radius:20px; font-size:14px;">${team}</span>`;
+    // Render Teams
+    let teamHTML = '';
+    ASSIGNED_TO.forEach((team, index) => {
+        teamHTML += `<div class="option-item">${team} <button onclick="removeOption('assignedTo', ${index})">×</button></div>`;
     });
-    html += '</div></div>';
+    document.getElementById('assignedToOptions').innerHTML = teamHTML;
+}
+
+function addNewOption(type) {
+    const value = prompt(`Enter new ${type}:`);
+    if (!value || value.trim() === '') return;
     
-    html += '</div>';
+    const trimmedValue = value.trim();
     
-    document.getElementById('settingsContent').innerHTML = html;
+    if (type === 'category') {
+        if (CATEGORIES.includes(trimmedValue)) {
+            alert('This category already exists!');
+            return;
+        }
+        CATEGORIES.push(trimmedValue);
+        localStorage.setItem('categories', JSON.stringify(CATEGORIES));
+    } else if (type === 'location') {
+        if (LOCATIONS.includes(trimmedValue)) {
+            alert('This location already exists!');
+            return;
+        }
+        LOCATIONS.push(trimmedValue);
+        localStorage.setItem('locations', JSON.stringify(LOCATIONS));
+    } else if (type === 'assignedTo') {
+        if (ASSIGNED_TO.includes(trimmedValue)) {
+            alert('This team already exists!');
+            return;
+        }
+        ASSIGNED_TO.push(trimmedValue);
+        localStorage.setItem('assignedTo', JSON.stringify(ASSIGNED_TO));
+    }
+    
+    renderSettings();
+    populateDropdowns();
+    alert(`${type} added successfully!`);
+}
+
+function removeOption(type, index) {
+    if (!confirm('Are you sure you want to remove this option?')) return;
+    
+    if (type === 'category') {
+        CATEGORIES.splice(index, 1);
+        localStorage.setItem('categories', JSON.stringify(CATEGORIES));
+    } else if (type === 'location') {
+        LOCATIONS.splice(index, 1);
+        localStorage.setItem('locations', JSON.stringify(LOCATIONS));
+    } else if (type === 'assignedTo') {
+        ASSIGNED_TO.splice(index, 1);
+        localStorage.setItem('assignedTo', JSON.stringify(ASSIGNED_TO));
+    }
+    
+    renderSettings();
+    populateDropdowns();
+    alert('Option removed successfully!');
+}
+
+function importData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const data = JSON.parse(event.target.result);
+                
+                if (data.tasks) {
+                    localStorage.setItem('tasks', JSON.stringify(data.tasks));
+                }
+                if (data.vendors) {
+                    localStorage.setItem('vendors', JSON.stringify(data.vendors));
+                }
+                if (data.scheduleStatus) {
+                    localStorage.setItem('scheduleStatus', JSON.stringify(data.scheduleStatus));
+                }
+                
+                alert('Data imported successfully!');
+                location.reload();
+            } catch (error) {
+                alert('Error importing data. Please check the file format.');
+                console.error(error);
+            }
+        };
+        
+        reader.readAsText(file);
+    };
+    
+    input.click();
 }

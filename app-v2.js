@@ -1629,3 +1629,23 @@ function importData() {
     
     input.click();
 }
+
+// ========================================
+// MAKE FUNCTIONS GLOBALLY ACCESSIBLE
+// ========================================
+// Ensure critical functions are accessible from HTML onclick handlers
+window.resetData = resetData;
+window.exportData = exportData;
+window.importData = importData;
+window.addTask = addTask;
+window.saveUser = saveUser;
+window.saveVendor = saveVendor;
+window.addNewOption = addNewOption;
+window.openAddTaskModal = openAddTaskModal;
+window.openAddUserModal = openAddUserModal;
+window.openAddVendorModal = openAddVendorModal;
+window.closeTaskModal = closeTaskModal;
+window.closeUserModal = closeUserModal;
+window.closeVendorModal = closeVendorModal;
+
+console.log('✅ All functions exposed globally - Ready for use');

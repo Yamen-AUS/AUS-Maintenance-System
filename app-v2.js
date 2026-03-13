@@ -111,29 +111,47 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
+    console.log('🚀 Initializing AUS Maintenance System...');
+    
     // Initialize users if not exists
     if (!localStorage.getItem('users')) {
         localStorage.setItem('users', JSON.stringify(DEFAULT_USERS));
+        console.log('👤 Created default users');
     }
 
     // Check if already logged in
     const loggedInUser = localStorage.getItem('currentUser');
     if (loggedInUser) {
         currentUser = JSON.parse(loggedInUser);
+        console.log('✅ User already logged in:', currentUser.username);
         showApp();
     } else {
+        console.log('🔐 No user logged in - showing login page');
         showLoginPage();
     }
 
     // Initialize data if not exists
-    if (!localStorage.getItem('tasks')) {
+    const existingTasks = localStorage.getItem('tasks');
+    if (!existingTasks) {
         localStorage.setItem('tasks', JSON.stringify(SAMPLE_TASKS));
+        console.log('📋 Created sample tasks (', SAMPLE_TASKS.length, 'tasks)');
+    } else {
+        const tasks = JSON.parse(existingTasks);
+        console.log('✅ Loaded existing tasks from storage (', tasks.length, 'tasks)');
     }
-    if (!localStorage.getItem('vendors')) {
+    
+    const existingVendors = localStorage.getItem('vendors');
+    if (!existingVendors) {
         localStorage.setItem('vendors', JSON.stringify(SAMPLE_VENDORS));
+        console.log('🏢 Created sample vendors (', SAMPLE_VENDORS.length, 'vendors)');
+    } else {
+        const vendors = JSON.parse(existingVendors);
+        console.log('✅ Loaded existing vendors from storage (', vendors.length, 'vendors)');
     }
+    
     if (!localStorage.getItem('scheduleStatus')) {
         initializeScheduleStatus();
+        console.log('📅 Initialized schedule status');
     }
 
     // Login form
@@ -149,6 +167,8 @@ function initializeApp() {
 
     // Populate dropdowns
     populateDropdowns();
+    
+    console.log('✅ App initialization complete!');
 }
 
 function handleLogin(e) {
@@ -1606,21 +1626,44 @@ function importData() {
             try {
                 const data = JSON.parse(event.target.result);
                 
-                if (data.tasks) {
+                console.log('📥 Importing data:', data);
+                
+                // Import tasks
+                if (data.tasks && Array.isArray(data.tasks)) {
                     localStorage.setItem('tasks', JSON.stringify(data.tasks));
-                }
-                if (data.vendors) {
-                    localStorage.setItem('vendors', JSON.stringify(data.vendors));
-                }
-                if (data.scheduleStatus) {
-                    localStorage.setItem('scheduleStatus', JSON.stringify(data.scheduleStatus));
+                    console.log('✅ Imported', data.tasks.length, 'tasks');
                 }
                 
-                alert('Data imported successfully!');
+                // Import vendors
+                if (data.vendors && Array.isArray(data.vendors)) {
+                    localStorage.setItem('vendors', JSON.stringify(data.vendors));
+                    console.log('✅ Imported', data.vendors.length, 'vendors');
+                }
+                
+                // Import schedule status
+                if (data.scheduleStatus) {
+                    localStorage.setItem('scheduleStatus', JSON.stringify(data.scheduleStatus));
+                    console.log('✅ Imported schedule status');
+                }
+                
+                // Verify data was saved
+                const savedTasks = localStorage.getItem('tasks');
+                if (savedTasks) {
+                    console.log('✅ Data saved to localStorage successfully!');
+                    console.log('📊 Tasks in storage:', JSON.parse(savedTasks).length);
+                } else {
+                    console.error('❌ Failed to save tasks to localStorage!');
+                }
+                
+                alert('✅ Data imported successfully!\n\n' + 
+                      'Tasks: ' + (data.tasks?.length || 0) + '\n' +
+                      'Vendors: ' + (data.vendors?.length || 0) + '\n\n' +
+                      'Page will reload now.');
+                
                 location.reload();
             } catch (error) {
-                alert('Error importing data. Please check the file format.');
-                console.error(error);
+                console.error('❌ Import error:', error);
+                alert('Error importing data. Please check the file format.\n\nError: ' + error.message);
             }
         };
         

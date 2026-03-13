@@ -32,17 +32,23 @@ console.log('🔥 Firebase Cloud Storage - Active');
 // AUTO-SAVE TO CLOUD
 // ========================================
 
+// Store original setItem
+const originalSetItem = localStorage.setItem.bind(localStorage);
+
 // Watch localStorage changes and sync to Firestore
 function watchLocalStorage() {
-    // Save tasks to cloud every time they change
-    const originalSetItem = localStorage.setItem;
+    // Override setItem but keep original functionality
     localStorage.setItem = function(key, value) {
-        originalSetItem.apply(this, arguments);
+        // Call original first
+        originalSetItem(key, value);
         
+        // Then sync to cloud if it's important data
         if (key === 'tasks' || key === 'vendors' || key === 'users') {
             saveToCloud(key, value);
         }
     };
+    
+    console.log('👁️ Watching localStorage for changes...');
 }
 
 // Save to Firestore
@@ -73,7 +79,7 @@ async function loadFromCloud() {
         const tasksDoc = await getDoc(doc(db, 'storage', 'tasks'));
         if (tasksDoc.exists()) {
             const tasks = tasksDoc.data().data;
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+            originalSetItem('tasks', JSON.stringify(tasks));
             console.log('✅ Loaded tasks from cloud:', tasks.length);
         }
         
@@ -81,7 +87,7 @@ async function loadFromCloud() {
         const vendorsDoc = await getDoc(doc(db, 'storage', 'vendors'));
         if (vendorsDoc.exists()) {
             const vendors = vendorsDoc.data().data;
-            localStorage.setItem('vendors', JSON.stringify(vendors));
+            originalSetItem('vendors', JSON.stringify(vendors));
             console.log('✅ Loaded vendors from cloud:', vendors.length);
         }
         
@@ -89,7 +95,7 @@ async function loadFromCloud() {
         const usersDoc = await getDoc(doc(db, 'storage', 'users'));
         if (usersDoc.exists()) {
             const users = usersDoc.data().data;
-            localStorage.setItem('users', JSON.stringify(users));
+            originalSetItem('users', JSON.stringify(users));
             console.log('✅ Loaded users from cloud:', users.length);
         }
         
@@ -120,7 +126,7 @@ function listenToCloud() {
             const newTasks = JSON.stringify(tasks);
             
             if (currentTasks !== newTasks) {
-                localStorage.setItem('tasks', newTasks);
+                originalSetItem('tasks', newTasks);
                 console.log('🔄 Tasks synced from cloud:', tasks.length);
                 
                 if (typeof window.renderTaskTable === 'function') {
@@ -137,7 +143,7 @@ function listenToCloud() {
     onSnapshot(doc(db, 'storage', 'vendors'), (doc) => {
         if (doc.exists()) {
             const vendors = doc.data().data;
-            localStorage.setItem('vendors', JSON.stringify(vendors));
+            originalSetItem('vendors', JSON.stringify(vendors));
             console.log('🔄 Vendors synced from cloud:', vendors.length);
             
             if (typeof window.renderVendorTable === 'function') {

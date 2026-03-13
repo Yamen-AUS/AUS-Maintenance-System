@@ -1,0 +1,197 @@
+// ========================================
+// Firestore Security Rules
+// Arab Unity School Maintenance System
+// ========================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========================================
+    // TEST MODE - للتطوير والاختبار (30 يوم)
+    // ========================================
+    // استخدم هذا أثناء التطوير والتجربة
+    // يسمح بالقراءة والكتابة للجميع حتى تاريخ محدد
+    
+    // match /{document=**} {
+    //   allow read, write: if request.time < timestamp.date(2025, 4, 15);
+    // }
+    
+    // ========================================
+    // DEVELOPMENT MODE - تطوير بدون قيود
+    // ========================================
+    // استخدم هذا للتطوير السريع (غير آمن!)
+    
+    match /{document=**} {
+      allow read, write: if true;
+    }
+    
+    // ========================================
+    // PRODUCTION RULES - قواعد الإنتاج (موصى بها)
+    // ========================================
+    // علق القواعد أعلاه وافتح هذه القواعد للإنتاج
+    
+    // // Tasks collection
+    // match /tasks/{taskId} {
+    //   // قراءة: الجميع
+    //   allow read: if true;
+    //   
+    //   // كتابة: المستخدمين المسجلين فقط
+    //   allow create: if request.auth != null;
+    //   allow update: if request.auth != null;
+    //   allow delete: if request.auth != null &&
+    //                   (request.auth.token.role == 'Admin' || 
+    //                    request.auth.token.role == 'Manager');
+    // }
+    
+    // // Vendors collection
+    // match /vendors/{vendorId} {
+    //   // قراءة: الجميع
+    //   allow read: if true;
+    //   
+    //   // كتابة: Admin فقط
+    //   allow write: if request.auth != null && 
+    //                  request.auth.token.role == 'Admin';
+    // }
+    
+    // // Users collection
+    // match /users/{userId} {
+    //   // قراءة: المستخدمين المسجلين
+    //   allow read: if request.auth != null;
+    //   
+    //   // كتابة: Admin فقط
+    //   allow write: if request.auth != null && 
+    //                  request.auth.token.role == 'Admin';
+    //   
+    //   // كل مستخدم يمكنه قراءة بياناته الخاصة
+    //   allow read: if request.auth != null && 
+    //                 request.auth.uid == userId;
+    // }
+    
+    // // Schedule Status collection
+    // match /scheduleStatus/{docId} {
+    //   // قراءة: الجميع
+    //   allow read: if true;
+    //   
+    //   // كتابة: المستخدمين المسجلين
+    //   allow write: if request.auth != null;
+    // }
+    
+    // // Settings collection
+    // match /settings/{docId} {
+    //   // قراءة: الجميع
+    //   allow read: if true;
+    //   
+    //   // كتابة: Admin و Manager فقط
+    //   allow write: if request.auth != null && 
+    //                  (request.auth.token.role == 'Admin' || 
+    //                   request.auth.token.role == 'Manager');
+    // }
+    
+    // ========================================
+    // ADVANCED RULES - قواعد متقدمة
+    // ========================================
+    
+    // // مثال: منع حذف المهام القديمة (أكثر من شهر)
+    // match /tasks/{taskId} {
+    //   allow delete: if request.auth != null && 
+    //                   request.auth.token.role == 'Admin' &&
+    //                   request.time < resource.data.createdAt + duration.value(30, 'd');
+    // }
+    
+    // // مثال: السماح بالقراءة فقط للمهام المعينة للمستخدم
+    // match /tasks/{taskId} {
+    //   allow read: if request.auth != null && 
+    //                 (resource.data.assignedTo == request.auth.token.email ||
+    //                  request.auth.token.role == 'Admin');
+    // }
+    
+    // // مثال: منع تعديل الحقول الحساسة (cost, vendor)
+    // match /tasks/{taskId} {
+    //   allow update: if request.auth != null && 
+    //                   (!request.resource.data.diff(resource.data).affectedKeys()
+    //                     .hasAny(['cost', 'vendor']) || 
+    //                    request.auth.token.role == 'Admin');
+    // }
+    
+    // ========================================
+    // HELPER FUNCTIONS
+    // ========================================
+    
+    // function isAdmin() {
+    //   return request.auth != null && 
+    //          request.auth.token.role == 'Admin';
+    // }
+    
+    // function isManager() {
+    //   return request.auth != null && 
+    //          request.auth.token.role == 'Manager';
+    // }
+    
+    // function isStaff() {
+    //   return request.auth != null && 
+    //          request.auth.token.role == 'Staff';
+    // }
+    
+    // function isAuthenticated() {
+    //   return request.auth != null;
+    // }
+    
+    // function isOwner(userId) {
+    //   return request.auth != null && 
+    //          request.auth.uid == userId;
+    // }
+  }
+}
+
+// ========================================
+// INSTRUCTIONS - تعليمات الاستخدام
+// ========================================
+
+// 1. للتطوير والتجربة:
+//    - استخدم القواعد في قسم "DEVELOPMENT MODE"
+//    - أو استخدم "TEST MODE" مع تحديد تاريخ انتهاء
+//
+// 2. للإنتاج:
+//    - علق قواعد DEVELOPMENT MODE
+//    - افتح قواعد PRODUCTION RULES
+//    - فعّل Firebase Authentication
+//    - أضف Custom Claims للأدوار (Admin, Manager, Staff)
+//
+// 3. لنسخ هذه القواعد:
+//    - افتح Firebase Console
+//    - اذهب إلى Firestore Database → Rules
+//    - الصق القواعد أعلاه
+//    - اضغط Publish
+//
+// 4. اختبار القواعد:
+//    - استخدم Firestore Rules Playground في Console
+//    - جرّب عمليات read/write مختلفة
+//    - تأكد من عمل القواعد كما هو متوقع
+
+// ========================================
+// SECURITY BEST PRACTICES
+// ========================================
+
+// ✅ استخدم Test Mode فقط للتطوير (30 يوم كحد أقصى)
+// ✅ فعّل Firebase Authentication قبل الإنتاج
+// ✅ استخدم Custom Claims لتحديد الأدوار
+// ✅ راجع القواعد بانتظام
+// ✅ استخدم Firestore Rules Playground للاختبار
+// ✅ لا تضع API Keys في الكود (استخدم Environment Variables)
+// ✅ فعّل App Check لمنع الاستخدام غير المصرح
+// ✅ راقب الاستخدام عبر Firebase Console
+
+// ========================================
+// MONITORING
+// ========================================
+
+// راقب الاستخدام اليومي:
+// - Firebase Console → Usage and billing
+// - تحقق من عدد القراءات/الكتابات
+// - ضع حدود (Quotas) لتجنب التكاليف المفاجئة
+// - استخدم Alerts لتنبيهك عند تجاوز الحدود
+
+// ========================================
+// END OF SECURITY RULES
+// ========================================

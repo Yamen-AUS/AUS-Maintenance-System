@@ -33,6 +33,43 @@ console.log('🔄 Firebase Sync Layer loaded');
 // SYNC TASKS
 // ========================================
 
+// Store original addTask function
+let originalAddTask = null;
+
+// Override addTask to push to Firestore
+function overrideAddTask() {
+    if (typeof window.addTask === 'function') {
+        originalAddTask = window.addTask;
+        
+        window.addTask = async function() {
+            // Call original function
+            originalAddTask();
+            
+            // Push to Firestore
+            if (SYNC_ENABLED) {
+                try {
+                    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+                    const latestTask = tasks[tasks.length - 1];
+                    
+                    if (latestTask) {
+                        const tasksCol = collection(db, COLLECTIONS.TASKS);
+                        await addDoc(tasksCol, {
+                            ...latestTask,
+                            createdAt: serverTimestamp(),
+                            updatedAt: serverTimestamp()
+                        });
+                        console.log('➕ Task pushed to Firestore:', latestTask.id);
+                    }
+                } catch (error) {
+                    console.error('❌ Error pushing task:', error);
+                }
+            }
+        };
+        
+        console.log('✅ addTask() hooked to Firestore');
+    }
+}
+
 // Listen to Firestore tasks and update localStorage
 export function startTasksSync() {
     if (!SYNC_ENABLED) return;
@@ -189,6 +226,9 @@ if (SYNC_ENABLED) {
     
     // Wait for Firebase to initialize
     setTimeout(() => {
+        // Override addTask
+        overrideAddTask();
+        
         // Start listening to Firestore
         startTasksSync();
         startVendorsSync();

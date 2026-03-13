@@ -225,6 +225,12 @@ function switchPage(pageName) {
         case 'vendors':
             renderVendors();
             break;
+        case 'settings':
+            renderSettings();
+            break;
+        case 'manageUsers':
+            renderManageUsers();
+            break;
     }
 }
 
@@ -311,6 +317,23 @@ function renderDashboard() {
         </div>
     `;
     document.getElementById('kpiGrid').innerHTML = kpiHTML;
+    
+    // Cost Breakdown by Type (5 categories)
+    const costBreakdownHTML = renderCostBreakdown();
+    const dashboardElement = document.getElementById('dashboard');
+    let costSection = document.getElementById('costBreakdownSection');
+    
+    if (!costSection) {
+        costSection = document.createElement('div');
+        costSection.id = 'costBreakdownSection';
+        costSection.style.marginTop = '24px';
+        costSection.style.marginBottom = '24px';
+        // Insert after KPI Grid
+        const kpiGrid = document.getElementById('kpiGrid');
+        kpiGrid.parentNode.insertBefore(costSection, kpiGrid.nextSibling);
+    }
+    
+    costSection.innerHTML = '<h3 style="margin-bottom:16px; color:#1a202c;">💰 Cost Breakdown by Type</h3>' + costBreakdownHTML;
 
     // Smart Alerts
     renderSmartAlerts(tasks, overdue, criticalPending, completed, totalTasks);
@@ -564,14 +587,18 @@ function filterTasks() {
 }
 
 function openAddTaskModal() {
-    document.getElementById('addTaskModal').classList.add('active');
+    document.getElementById('taskModal').classList.add('active');
     // Set defaults
     document.getElementById('taskDateReported').value = new Date().toISOString().split('T')[0];
 }
 
+function closeTaskModal() {
+    document.getElementById('taskModal').classList.remove('active');
+    document.getElementById('taskForm').reset();
+}
+
 function closeModal() {
-    document.getElementById('addTaskModal').classList.remove('active');
-    document.getElementById('addTaskForm').reset();
+    closeTaskModal();
 }
 
 function addTask() {
@@ -600,7 +627,7 @@ function addTask() {
 
     tasks.push(task);
     saveTasks(tasks);
-    closeModal();
+    closeTaskModal();
     renderTaskTable();
     alert('Task added successfully!');
 }
@@ -1183,4 +1210,335 @@ function getStatusClass(status) {
     if (status.includes('On Hold')) return 'on-hold';
     if (status.includes('Cancelled')) return 'cancelled';
     return '';
+}
+
+// ========== COST BREAKDOWN BY TYPE ==========
+function renderCostBreakdown() {
+    const tasks = getTasks();
+    
+    const costTypes = {
+        'Electrical': 0,
+        'Plumbing': 0,
+        'HVAC/AC': 0,
+        'Civil/Building': 0,
+        'Other': 0
+    };
+    
+    tasks.forEach(task => {
+        const cost = parseFloat(task.cost) || 0;
+        const category = task.category || 'Other';
+        
+        if (category === 'Electrical') {
+            costTypes['Electrical'] += cost;
+        } else if (category === 'Plumbing') {
+            costTypes['Plumbing'] += cost;
+        } else if (category === 'HVAC/AC') {
+            costTypes['HVAC/AC'] += cost;
+        } else if (category === 'Civil/Building' || category === 'Painting') {
+            costTypes['Civil/Building'] += cost;
+        } else {
+            costTypes['Other'] += cost;
+        }
+    });
+    
+    let html = '<div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:16px; margin-bottom:24px;">';
+    
+    const colors = {
+        'Electrical': '#FF6384',
+        'Plumbing': '#36A2EB',
+        'HVAC/AC': '#FFCE56',
+        'Civil/Building': '#4BC0C0',
+        'Other': '#9966FF'
+    };
+    
+    Object.keys(costTypes).forEach(type => {
+        html += `
+            <div style="background:white; padding:20px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1); text-align:center; border-left:4px solid ${colors[type]};">
+                <div style="font-size:14px; color:#666; margin-bottom:8px; font-weight:600;">${type}</div>
+                <div style="font-size:28px; font-weight:bold; color:#1a202c;">${costTypes[type].toLocaleString()} AED</div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    return html;
+}
+
+// ========== EXPORT TO CSV ==========
+function exportCSV() {
+    const tasks = getTasks();
+    
+    if (tasks.length === 0) {
+        alert('No tasks to export!');
+        return;
+    }
+    
+    // CSV Headers
+    let csv = 'ID,Title,Category,Location,Term,Priority,Status,Assigned To,Reported By,Date Reported,Due Date,Date Completed,Cost (AED),Vendor,Progress %,Notes\n';
+    
+    // Add task rows
+    tasks.forEach(task => {
+        const row = [
+            task.id || '',
+            `"${(task.title || '').replace(/"/g, '""')}"`,
+            task.category || '',
+            task.location || '',
+            task.term || '',
+            task.priority || '',
+            task.status || '',
+            task.assignedTo || '',
+            task.reportedBy || '',
+            task.dateReported || '',
+            task.dueDate || '',
+            task.dateCompleted || '',
+            task.cost || 0,
+            task.vendor || '',
+            task.progress || 0,
+            `"${(task.notes || '').replace(/"/g, '""')}"`
+        ];
+        csv += row.join(',') + '\n';
+    });
+    
+    // Create download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `AUS_Maintenance_Tasks_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    alert(`Exported ${tasks.length} tasks to CSV successfully!`);
+}
+
+// ========== IMPORT FROM CSV ==========
+function importCSV() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const csvContent = event.target.result;
+            
+            try {
+                const lines = csvContent.split('\n');
+                const headers = lines[0].split(',');
+                
+                const importedTasks = [];
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    // Parse CSV row (handle quoted fields)
+                    const values = [];
+                    let currentValue = '';
+                    let insideQuotes = false;
+                    
+                    for (let char of line) {
+                        if (char === '"') {
+                            insideQuotes = !insideQuotes;
+                        } else if (char === ',' && !insideQuotes) {
+                            values.push(currentValue.trim());
+                            currentValue = '';
+                        } else {
+                            currentValue += char;
+                        }
+                    }
+                    values.push(currentValue.trim());
+                    
+                    if (values.length >= 13) {
+                        const task = {
+                            id: values[0] || `MNT-${String(i).padStart(3, '0')}`,
+                            title: values[1].replace(/^"|"$/g, '').replace(/""/g, '"'),
+                            category: values[2],
+                            location: values[3],
+                            term: values[4],
+                            priority: values[5],
+                            status: values[6],
+                            assignedTo: values[7],
+                            reportedBy: values[8],
+                            dateReported: values[9],
+                            dueDate: values[10],
+                            dateCompleted: values[11] || null,
+                            cost: parseFloat(values[12]) || 0,
+                            vendor: values[13] || 'N/A',
+                            progress: parseInt(values[14]) || 0,
+                            notes: (values[15] || '').replace(/^"|"$/g, '').replace(/""/g, '"')
+                        };
+                        importedTasks.push(task);
+                    }
+                }
+                
+                if (importedTasks.length > 0) {
+                    if (confirm(`Import ${importedTasks.length} tasks? This will ADD to existing tasks.`)) {
+                        const existingTasks = getTasks();
+                        const allTasks = [...existingTasks, ...importedTasks];
+                        saveTasks(allTasks);
+                        renderTaskTable();
+                        alert(`Successfully imported ${importedTasks.length} tasks!`);
+                        switchPage('tasks');
+                    }
+                } else {
+                    alert('No valid tasks found in CSV file.');
+                }
+                
+            } catch (error) {
+                console.error('Import error:', error);
+                alert('Error importing CSV file. Please check the format.');
+            }
+        };
+        
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
+// ========== USER MANAGEMENT ==========
+function getUsers() {
+    const users = localStorage.getItem('users');
+    return users ? JSON.parse(users) : DEFAULT_USERS;
+}
+
+function saveUsers(users) {
+    localStorage.setItem('users', JSON.stringify(users));
+}
+
+function renderManageUsers() {
+    if (!currentUser || !currentUser.permissions.users) {
+        alert('You do not have permission to manage users.');
+        switchPage('dashboard');
+        return;
+    }
+    
+    const users = getUsers();
+    let html = '<div style="margin-top:20px;"><table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#2563A8; color:white;"><th style="padding:12px; text-align:left;">Username</th><th>Role</th><th>Permissions</th><th>Actions</th></tr></thead><tbody>';
+    
+    users.forEach((user, index) => {
+        const permissions = Object.keys(user.permissions).filter(p => user.permissions[p]).join(', ');
+        html += `
+            <tr style="border-bottom:1px solid #e0e0e0;">
+                <td style="padding:12px;"><strong>${user.username}</strong></td>
+                <td>${user.role}</td>
+                <td style="font-size:12px;">${permissions}</td>
+                <td><button onclick="deleteUser(${index})" style="padding:6px 12px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button></td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    
+    document.getElementById('usersTable').innerHTML = html;
+}
+
+function openUserModal() {
+    document.getElementById('userModal').classList.add('active');
+}
+
+function closeUserModal() {
+    document.getElementById('userModal').classList.remove('active');
+    document.getElementById('userForm').reset();
+}
+
+function saveUser() {
+    const username = document.getElementById('newUsername').value.trim();
+    const password = document.getElementById('newUserPassword').value;
+    const role = document.getElementById('newUserRole').value;
+    
+    if (!username || !password) {
+        alert('Please enter username and password.');
+        return;
+    }
+    
+    const users = getUsers();
+    
+    // Check if username exists
+    if (users.some(u => u.username === username)) {
+        alert('Username already exists!');
+        return;
+    }
+    
+    const newUser = {
+        username: username,
+        password: password,
+        role: role,
+        permissions: {
+            view: document.getElementById('permView').checked,
+            add: document.getElementById('permAdd').checked,
+            edit: document.getElementById('permEdit').checked,
+            delete: document.getElementById('permDelete').checked,
+            export: document.getElementById('permExport').checked,
+            settings: document.getElementById('permSettings').checked,
+            users: document.getElementById('permUsers').checked
+        }
+    };
+    
+    users.push(newUser);
+    saveUsers(users);
+    closeUserModal();
+    renderManageUsers();
+    alert('User created successfully!');
+}
+
+function deleteUser(index) {
+    if (confirm('Are you sure you want to delete this user?')) {
+        const users = getUsers();
+        
+        if (users[index].username === 'admin') {
+            alert('Cannot delete the default admin user!');
+            return;
+        }
+        
+        users.splice(index, 1);
+        saveUsers(users);
+        renderManageUsers();
+        alert('User deleted successfully!');
+    }
+}
+
+// ========== SETTINGS PAGE RENDER ==========
+function renderSettings() {
+    // Cost breakdown is already handled in Dashboard
+    // Settings page can show categories, locations, teams
+    
+    let html = '<div style="margin-top:20px;">';
+    
+    html += '<div style="background:white; padding:24px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:20px;">';
+    html += '<h3 style="margin-top:0;">System Categories</h3>';
+    html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+    CATEGORIES.forEach(cat => {
+        html += `<span style="background:#e3f2fd; padding:8px 16px; border-radius:20px; font-size:14px;">${cat}</span>`;
+    });
+    html += '</div></div>';
+    
+    html += '<div style="background:white; padding:24px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:20px;">';
+    html += '<h3 style="margin-top:0;">Locations</h3>';
+    html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+    LOCATIONS.forEach(loc => {
+        html += `<span style="background:#fff3e0; padding:8px 16px; border-radius:20px; font-size:14px;">${loc}</span>`;
+    });
+    html += '</div></div>';
+    
+    html += '<div style="background:white; padding:24px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">';
+    html += '<h3 style="margin-top:0;">Teams</h3>';
+    html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+    ASSIGNED_TO.forEach(team => {
+        html += `<span style="background:#e8f5e9; padding:8px 16px; border-radius:20px; font-size:14px;">${team}</span>`;
+    });
+    html += '</div></div>';
+    
+    html += '</div>';
+    
+    document.getElementById('settingsContent').innerHTML = html;
 }

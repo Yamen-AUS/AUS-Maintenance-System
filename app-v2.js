@@ -1154,12 +1154,34 @@ function exportData() {
 }
 
 function resetData() {
-    if (confirm('This will delete all current data and restore sample data. Are you sure?')) {
+    console.log('🔄 Reset Data button clicked');
+    
+    if (!confirm('This will delete all current data and restore sample data. Are you sure?')) {
+        console.log('❌ Reset cancelled by user');
+        return;
+    }
+    
+    console.log('✅ User confirmed - resetting data...');
+    
+    try {
+        // Reset to sample data
         localStorage.setItem('tasks', JSON.stringify(SAMPLE_TASKS));
         localStorage.setItem('vendors', JSON.stringify(SAMPLE_VENDORS));
         initializeScheduleStatus();
-        alert('Data reset to sample data successfully!');
+        
+        console.log('✅ Data reset complete!');
+        console.log('📊 Sample tasks:', SAMPLE_TASKS.length);
+        console.log('🏢 Sample vendors:', SAMPLE_VENDORS.length);
+        
+        alert('✅ Data reset to sample data successfully!\n\n' +
+              'Tasks: ' + SAMPLE_TASKS.length + '\n' +
+              'Vendors: ' + SAMPLE_VENDORS.length + '\n\n' +
+              'Page will reload now.');
+        
         location.reload();
+    } catch (error) {
+        console.error('❌ Reset error:', error);
+        alert('Error resetting data: ' + error.message);
     }
 }
 
@@ -1692,3 +1714,12 @@ window.closeUserModal = closeUserModal;
 window.closeVendorModal = closeVendorModal;
 
 console.log('✅ All functions exposed globally - Ready for use');
+
+// Verify critical functions
+setTimeout(() => {
+    console.log('🔍 Verifying functions...');
+    console.log('resetData:', typeof window.resetData === 'function' ? '✅' : '❌');
+    console.log('exportData:', typeof window.exportData === 'function' ? '✅' : '❌');
+    console.log('importData:', typeof window.importData === 'function' ? '✅' : '❌');
+    console.log('addTask:', typeof window.addTask === 'function' ? '✅' : '❌');
+}, 1000);

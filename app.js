@@ -3,6 +3,27 @@
 
 // Constants
 const CORRECT_PASSWORD = "AUS2026";
+
+// User System
+const DEFAULT_USERS = [
+    {
+        username: 'admin',
+        password: 'AUS2026',
+        role: 'Admin',
+        permissions: {
+            view: true,
+            add: true,
+            edit: true,
+            delete: true,
+            export: true,
+            settings: true,
+            users: true
+        }
+    }
+];
+
+let currentUser = null;
+
 const CATEGORIES = [
     'Electrical', 'Plumbing', 'HVAC/AC', 'Civil/Building', 'Painting',
     'IT/AV Equipment', 'Safety & Security', 'Pest Control', 'Landscaping',
@@ -90,8 +111,15 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
+    // Initialize users if not exists
+    if (!localStorage.getItem('users')) {
+        localStorage.setItem('users', JSON.stringify(DEFAULT_USERS));
+    }
+
     // Check if already logged in
-    if (localStorage.getItem('loggedIn') === 'true') {
+    const loggedInUser = localStorage.getItem('currentUser');
+    if (loggedInUser) {
+        currentUser = JSON.parse(loggedInUser);
         showApp();
     } else {
         showLoginPage();
@@ -125,9 +153,17 @@ function initializeApp() {
 
 function handleLogin(e) {
     e.preventDefault();
+    const username = document.getElementById('usernameInput')?.value || 'admin';
     const password = document.getElementById('passwordInput').value;
-    if (password === CORRECT_PASSWORD) {
-        localStorage.setItem('loggedIn', 'true');
+    
+    // Get users from localStorage
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const user = users.find(u => u.username === username && u.password === password);
+    
+    if (user) {
+        currentUser = user;
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        localStorage.setItem('loggedIn', 'true'); // Keep for compatibility
         showApp();
     } else {
         document.getElementById('errorMessage').style.display = 'block';
@@ -142,11 +178,23 @@ function showLoginPage() {
 function showApp() {
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
+    
+    // Update user info display if exists
+    const userInfoEl = document.getElementById('userInfo');
+    if (userInfoEl && currentUser) {
+        userInfoEl.innerHTML = `
+            <div class="username">${currentUser.username}</div>
+            <div class="role">${currentUser.role}</div>
+        `;
+    }
+    
     switchPage('dashboard');
 }
 
 function logout() {
     localStorage.removeItem('loggedIn');
+    localStorage.removeItem('currentUser');
+    currentUser = null;
     showLoginPage();
 }
 
@@ -435,6 +483,7 @@ function renderTrendChart(tasks) {
 // Task Tracker Functions
 function renderTaskTable() {
     const tasks = getTasks();
+    const perms = currentUser ? currentUser.permissions : { view: true, edit: true, delete: true };
     let html = '';
     tasks.forEach((task, index) => {
         const rowClass = task.status === '✅ Completed' ? 'completed' : (isOverdue(task) ? 'overdue' : '');
@@ -455,8 +504,8 @@ function renderTaskTable() {
                 <td>${task.cost ? task.cost.toLocaleString() : '0'}</td>
                 <td><span class="health-score ${healthClass}">${healthScore}</span></td>
                 <td>
-                    <button onclick="editTask(${index})" style="padding:4px 8px; background:#17a2b8; color:white; border:none; border-radius:4px; cursor:pointer; margin-right:4px;">Edit</button>
-                    <button onclick="deleteTask(${index})" style="padding:4px 8px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>
+                    ${perms.edit ? `<button onclick="editTask(${index})" style="padding:4px 8px; background:#17a2b8; color:white; border:none; border-radius:4px; cursor:pointer; margin-right:4px;">Edit</button>` : ''}
+                    ${perms.delete ? `<button onclick="deleteTask(${index})" style="padding:4px 8px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>` : ''}
                 </td>
             </tr>
         `;
@@ -472,6 +521,7 @@ function filterTasks() {
     const filterCategory = document.getElementById('filterCategory').value;
 
     const tasks = getTasks();
+    const perms = currentUser ? currentUser.permissions : { view: true, edit: true, delete: true };
     const filtered = tasks.filter(task => {
         const matchSearch = task.title.toLowerCase().includes(search) || 
                            task.id.toLowerCase().includes(search);
@@ -504,8 +554,8 @@ function filterTasks() {
                 <td>${task.cost ? task.cost.toLocaleString() : '0'}</td>
                 <td><span class="health-score ${healthClass}">${healthScore}</span></td>
                 <td>
-                    <button onclick="editTask(${tasks.indexOf(task)})" style="padding:4px 8px; background:#17a2b8; color:white; border:none; border-radius:4px; cursor:pointer; margin-right:4px;">Edit</button>
-                    <button onclick="deleteTask(${tasks.indexOf(task)})" style="padding:4px 8px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>
+                    ${perms.edit ? `<button onclick="editTask(${tasks.indexOf(task)})" style="padding:4px 8px; background:#17a2b8; color:white; border:none; border-radius:4px; cursor:pointer; margin-right:4px;">Edit</button>` : ''}
+                    ${perms.delete ? `<button onclick="deleteTask(${tasks.indexOf(task)})" style="padding:4px 8px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>` : ''}
                 </td>
             </tr>
         `;

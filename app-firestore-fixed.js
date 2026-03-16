@@ -1344,8 +1344,192 @@ window.resetData = function() {
 // Schedule
 // ========================================
 async function loadSchedule() {
-    console.log('📅 Schedule page loaded');
+    console.log('📅 Loading schedule...');
+    
+    try {
+        // Load tasks from Firestore
+        const tasksSnapshot = await getDocs(
+            query(collection(db, COLLECTIONS.tasks), orderBy('dateReported', 'desc'))
+        );
+        
+        const tasks = [];
+        tasksSnapshot.forEach(docSnap => {
+            tasks.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        
+        window.allTasks = tasks;
+        
+        // Render annual schedule by default
+        renderAnnualSchedule(tasks);
+        
+        // Setup month selector for daily view
+        setupMonthSelector();
+        
+        console.log('✅ Schedule loaded successfully');
+    } catch (error) {
+        console.error('Schedule load error:', error);
+        alert('❌ Failed to load schedule data');
+    }
 }
+
+// Show Schedule View (Annual or Daily)
+window.showScheduleView = function(viewType) {
+    const annualView = document.getElementById('annualScheduleView');
+    const dailyView = document.getElementById('dailyScheduleView');
+    const annualBtn = document.getElementById('annualViewBtn');
+    const dailyBtn = document.getElementById('dailyViewBtn');
+    
+    if (viewType === 'annual') {
+        annualView.style.display = 'block';
+        dailyView.style.display = 'none';
+        annualBtn.style.background = '#2563A8';
+        dailyBtn.style.background = '#6c757d';
+    } else {
+        annualView.style.display = 'none';
+        dailyView.style.display = 'block';
+        annualBtn.style.background = '#6c757d';
+        dailyBtn.style.background = '#2563A8';
+        renderDailyCalendar();
+    }
+};
+
+// Render Annual Schedule
+function renderAnnualSchedule(tasks) {
+    const tbody = document.getElementById('annualScheduleBody');
+    if (!tbody) return;
+    
+    // Define recurring maintenance tasks
+    const recurringTasks = [
+        { name: 'HVAC Filter Replacement', months: [8, 11, 2, 5] },  // Sep, Dec, Mar, Jun
+        { name: 'Fire Safety Equipment Check', months: [8, 2] },      // Sep, Mar
+        { name: 'Electrical System Inspection', months: [9, 3] },     // Oct, Apr
+        { name: 'Plumbing System Check', months: [10, 4] },          // Nov, May
+        { name: 'Building Exterior Inspection', months: [11, 5] },    // Dec, Jun
+        { name: 'Playground Equipment Safety Check', months: [8, 1, 6] }, // Sep, Feb, Jul
+        { name: 'Emergency Exit & Lighting Test', months: [9, 3] },   // Oct, Apr
+        { name: 'Water Quality Testing', months: [10, 2, 6] },        // Nov, Mar, Jul
+        { name: 'Pest Control Service', months: [8, 10, 0, 2, 4, 6] }, // Every 2 months
+        { name: 'Generator Maintenance', months: [11, 5] },           // Dec, Jun
+        { name: 'Roof & Drainage Inspection', months: [7, 11] },      // Aug, Dec (before/after rain)
+        { name: 'AC Deep Cleaning', months: [7, 5] },                 // Aug, Jun (summer prep)
+        { name: 'Paint Touch-up & Repairs', months: [6, 7] },         // Jul, Aug (summer)
+        { name: 'Furniture & Fixtures Check', months: [7] }           // Aug (before new year)
+    ];
+    
+    let html = '';
+    recurringTasks.forEach(task => {
+        html += `<tr style="border-bottom:1px solid #e0e0e0;">`;
+        html += `<td style="padding:16px 8px; font-weight:600; color:#0D1B2A; position:sticky; left:0; background:white; z-index:1; border-right:2px solid #e0e0e0;">${task.name}</td>`;
+        
+        // 12 months (Sep to Aug: 8,9,10,11,0,1,2,3,4,5,6,7)
+        const monthOrder = [8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7];
+        monthOrder.forEach(monthIndex => {
+            const isScheduled = task.months.includes(monthIndex);
+            if (isScheduled) {
+                html += `<td style="padding:12px; text-align:center; background:#10B981; color:white; font-size:18px;">✓</td>`;
+            } else {
+                html += `<td style="padding:12px; text-align:center; background:#f3f4f6; color:#9ca3af;">—</td>`;
+            }
+        });
+        
+        html += `</tr>`;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+// Setup Month Selector
+function setupMonthSelector() {
+    const selector = document.getElementById('calendarMonth');
+    if (!selector) return;
+    
+    const months = [
+        'September 2025', 'October 2025', 'November 2025', 'December 2025',
+        'January 2026', 'February 2026', 'March 2026', 'April 2026',
+        'May 2026', 'June 2026', 'July 2026', 'August 2026'
+    ];
+    
+    selector.innerHTML = months.map((month, index) => 
+        `<option value="${index}">${month}</option>`
+    ).join('');
+    
+    // Set current month
+    const now = new Date();
+    let currentMonthIndex = now.getMonth();
+    // Adjust for academic year (Sep = 0, Oct = 1, etc.)
+    if (currentMonthIndex >= 8) {
+        currentMonthIndex = currentMonthIndex - 8;
+    } else {
+        currentMonthIndex = currentMonthIndex + 4;
+    }
+    selector.value = currentMonthIndex;
+}
+
+// Render Daily Calendar
+window.renderDailyCalendar = function() {
+    const container = document.getElementById('dailyCalendarGrid');
+    const monthSelector = document.getElementById('calendarMonth');
+    if (!container || !monthSelector) return;
+    
+    const selectedMonth = parseInt(monthSelector.value);
+    
+    // Map to actual month (Sep 2025 = 8, Jan 2026 = 0, etc.)
+    let actualMonth, year;
+    if (selectedMonth < 4) { // Sep-Dec 2025
+        actualMonth = selectedMonth + 8;
+        year = 2025;
+    } else { // Jan-Aug 2026
+        actualMonth = selectedMonth - 4;
+        year = 2026;
+    }
+    
+    // Get days in month
+    const daysInMonth = new Date(year, actualMonth + 1, 0).getDate();
+    const firstDay = new Date(year, actualMonth, 1).getDay();
+    
+    // Days of week
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    let html = '<div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px;">';
+    
+    // Header
+    daysOfWeek.forEach(day => {
+        html += `<div style="padding:12px; background:#0D1B2A; color:white; text-align:center; font-weight:600; border-radius:8px;">${day}</div>`;
+    });
+    
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+        html += `<div style="padding:20px; background:#f9fafb; border-radius:8px;"></div>`;
+    }
+    
+    // Days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = (day === new Date().getDate() && actualMonth === new Date().getMonth() && year === new Date().getFullYear());
+        const bgColor = isToday ? '#2563A8' : 'white';
+        const textColor = isToday ? 'white' : '#0D1B2A';
+        const border = isToday ? 'none' : '2px solid #e0e0e0';
+        
+        html += `<div style="padding:12px; background:${bgColor}; color:${textColor}; border:${border}; border-radius:8px; min-height:80px; position:relative;">`;
+        html += `<div style="font-weight:600; font-size:16px; margin-bottom:8px;">${day}</div>`;
+        
+        // Check if any tasks for this day
+        const dateStr = `${year}-${String(actualMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const tasksForDay = window.allTasks.filter(task => {
+            return task.dateReported === dateStr || task.dueDate === dateStr || task.dateCompleted === dateStr;
+        });
+        
+        if (tasksForDay.length > 0) {
+            html += `<div style="font-size:11px; background:${isToday ? 'rgba(255,255,255,0.2)' : '#FEF3C7'}; padding:4px 6px; border-radius:4px; margin-top:4px;">`;
+            html += `📋 ${tasksForDay.length} task${tasksForDay.length > 1 ? 's' : ''}`;
+            html += `</div>`;
+        }
+        
+        html += `</div>`;
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+};
 
 // ========================================
 // Users Management

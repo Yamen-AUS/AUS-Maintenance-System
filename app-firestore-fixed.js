@@ -1177,7 +1177,59 @@ function renderTopCategories(tasks) {
 // ========================================
 async function loadSettings() {
     console.log('⚙️ Settings page loaded');
+    
+    // Load current options from tasks
+    if (window.allTasks.length === 0) {
+        await loadTasksData();
+    }
+    
+    renderSettingsOptions();
 }
+
+function renderSettingsOptions() {
+    const tasks = window.allTasks;
+    
+    // Extract unique categories
+    const categories = [...new Set(tasks.map(t => t.category).filter(Boolean))];
+    renderOptionsList('categoryOptions', categories);
+    
+    // Extract unique locations
+    const locations = [...new Set(tasks.map(t => t.location).filter(Boolean))];
+    renderOptionsList('locationOptions', locations);
+    
+    // Extract unique assigned to
+    const assignedTo = [...new Set(tasks.map(t => t.assignedTo).filter(Boolean))];
+    renderOptionsList('assignedToOptions', assignedTo);
+}
+
+function renderOptionsList(containerId, options) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    if (options.length === 0) {
+        container.innerHTML = '<p style="padding:10px; color:#999; font-size:13px;">No options yet. Add one below.</p>';
+        return;
+    }
+    
+    container.innerHTML = options.map(option => `
+        <div class="option-item">
+            <span>${option}</span>
+            <button onclick="removeOption('${containerId}', '${option}')">Remove</button>
+        </div>
+    `).join('');
+}
+
+window.addNewOption = function(type) {
+    const optionName = prompt(`Enter new ${type}:`);
+    if (!optionName || !optionName.trim()) return;
+    
+    // Just show a message for now - options are dynamic based on tasks
+    alert(`✅ To add "${optionName.trim()}" as a ${type}, simply use it when creating a new task. It will appear in the dropdown automatically.`);
+};
+
+window.removeOption = function(containerId, optionName) {
+    alert(`⚠️ To remove "${optionName}", you need to:\n\n1. Edit all tasks using this ${containerId.replace('Options', '')}\n2. Change them to a different value\n3. The option will disappear automatically`);
+};
 
 window.exportData = function() {
     const data = {
@@ -1199,7 +1251,89 @@ window.exportData = function() {
 };
 
 window.importData = function() {
-    alert('Import functionality coming soon! For now, please use the Firebase console to import data.');
+    // Create file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        showSyncStatus('📥 Importing data...', 'syncing');
+        
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            
+            if (!data.tasks || !Array.isArray(data.tasks)) {
+                alert('❌ Invalid file format. Expected JSON with "tasks" array.');
+                showSyncStatus('❌ Import failed', 'error');
+                return;
+            }
+            
+            // Confirm import
+            const confirmMsg = `Import ${data.tasks.length} task(s)${data.vendors ? ' and ' + data.vendors.length + ' vendor(s)' : ''}?\n\n⚠️ This will ADD to existing data (not replace).`;
+            
+            if (!confirm(confirmMsg)) {
+                showSyncStatus('Import cancelled', 'synced');
+                return;
+            }
+            
+            let imported = 0;
+            
+            // Import tasks
+            for (const task of data.tasks) {
+                try {
+                    const taskId = task.id || 'MNT-' + Date.now() + '-' + imported;
+                    await setDoc(doc(db, COLLECTIONS.tasks, taskId), {
+                        ...task,
+                        importedAt: new Date().toISOString(),
+                        importedBy: window.currentUser.name
+                    });
+                    imported++;
+                } catch (error) {
+                    console.error('Failed to import task:', task.id, error);
+                }
+            }
+            
+            // Import vendors if exist
+            if (data.vendors && Array.isArray(data.vendors)) {
+                for (const vendor of data.vendors) {
+                    try {
+                        const vendorId = vendor.id || 'VEN-' + Date.now();
+                        await setDoc(doc(db, COLLECTIONS.vendors, vendorId), {
+                            ...vendor,
+                            importedAt: new Date().toISOString(),
+                            importedBy: window.currentUser.name
+                        });
+                    } catch (error) {
+                        console.error('Failed to import vendor:', vendor.id, error);
+                    }
+                }
+            }
+            
+            showSyncStatus(`✅ Imported ${imported} items successfully`, 'synced');
+            alert(`✅ Successfully imported ${imported} items!`);
+            
+            // Reload current page
+            if (window.currentPage === 'tasks') {
+                await loadTasks();
+            } else if (window.currentPage === 'dashboard') {
+                await loadDashboard();
+            } else if (window.currentPage === 'vendors') {
+                await loadVendors();
+            }
+            
+        } catch (error) {
+            console.error('Import error:', error);
+            showSyncStatus('❌ Import failed', 'error');
+            alert('❌ Failed to import data: ' + error.message);
+        }
+    };
+    
+    // Trigger file selection
+    input.click();
 };
 
 window.resetData = function() {

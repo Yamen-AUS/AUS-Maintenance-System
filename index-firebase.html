@@ -1468,35 +1468,28 @@ Features:
         <span id="syncStatusText">All changes saved</span>
     </div>
 
-    <!-- Firebase Configuration & Sync (MUST load as modules) -->
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="firebase-sync.js"></script>
+    <!-- Firestore Complete App (100% Cloud-Based) -->
+    <script type="module" src="app-firestore-complete.js"></script>
     
-    <!-- Main Application Script -->
-    <script src="app-v2.js"></script>
-    
-    <!-- Force Reset Function to be Available -->
+    <!-- System Ready Indicator -->
     <script>
-    // Ensure resetData is always accessible
     window.addEventListener('load', function() {
-        console.log('🔍 Checking resetData availability...');
-        console.log('resetData type:', typeof window.resetData);
+        console.log('✅ AUS Maintenance System - Firestore Version Loaded');
+        console.log('📡 All data is now 100% cloud-based');
+        console.log('🔄 Real-time sync enabled');
         
-        if (typeof window.resetData !== 'function') {
-            console.error('❌ resetData not found! Creating fallback...');
-            
-            // Fallback implementation
-            window.resetData = function() {
-                console.log('🔄 Fallback resetData called');
-                
-                if (!confirm('This will delete all data and restore sample data. Continue?')) {
-                    return;
-                }
-                
-                // Clear all data
-                localStorage.clear();
-                
-                alert('✅ All data cleared! Page will reload to restore sample data.');
+        // Show sync indicator briefly
+        setTimeout(() => {
+            const syncStatus = document.getElementById('syncStatus');
+            if (syncStatus) {
+                syncStatus.style.display = 'flex';
+                setTimeout(() => {
+                    syncStatus.style.display = 'none';
+                }, 3000);
+            }
+        }, 1000);
+    });
+    </script>
                 location.reload();
             };
             

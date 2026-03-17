@@ -1398,37 +1398,53 @@ function renderAnnualSchedule(tasks) {
     const tbody = document.getElementById('annualScheduleBody');
     if (!tbody) return;
     
-    // Define recurring maintenance tasks
+    // Define recurring maintenance tasks with IDs
     const recurringTasks = [
-        { name: 'HVAC Filter Replacement', months: [8, 11, 2, 5] },  // Sep, Dec, Mar, Jun
-        { name: 'Fire Safety Equipment Check', months: [8, 2] },      // Sep, Mar
-        { name: 'Electrical System Inspection', months: [9, 3] },     // Oct, Apr
-        { name: 'Plumbing System Check', months: [10, 4] },          // Nov, May
-        { name: 'Building Exterior Inspection', months: [11, 5] },    // Dec, Jun
-        { name: 'Playground Equipment Safety Check', months: [8, 1, 6] }, // Sep, Feb, Jul
-        { name: 'Emergency Exit & Lighting Test', months: [9, 3] },   // Oct, Apr
-        { name: 'Water Quality Testing', months: [10, 2, 6] },        // Nov, Mar, Jul
-        { name: 'Pest Control Service', months: [8, 10, 0, 2, 4, 6] }, // Every 2 months
-        { name: 'Generator Maintenance', months: [11, 5] },           // Dec, Jun
-        { name: 'Roof & Drainage Inspection', months: [7, 11] },      // Aug, Dec (before/after rain)
-        { name: 'AC Deep Cleaning', months: [7, 5] },                 // Aug, Jun (summer prep)
-        { name: 'Paint Touch-up & Repairs', months: [6, 7] },         // Jul, Aug (summer)
-        { name: 'Furniture & Fixtures Check', months: [7] }           // Aug (before new year)
+        { id: 'RT-001', name: 'HVAC Filter Replacement', months: [8, 11, 2, 5], category: 'HVAC/AC' },
+        { id: 'RT-002', name: 'Fire Safety Equipment Check', months: [8, 2], category: 'Safety & Security' },
+        { id: 'RT-003', name: 'Electrical System Inspection', months: [9, 3], category: 'Electrical' },
+        { id: 'RT-004', name: 'Plumbing System Check', months: [10, 4], category: 'Plumbing' },
+        { id: 'RT-005', name: 'Building Exterior Inspection', months: [11, 5], category: 'Civil/Building' },
+        { id: 'RT-006', name: 'Playground Equipment Safety Check', months: [8, 1, 6], category: 'Safety & Security' },
+        { id: 'RT-007', name: 'Emergency Exit & Lighting Test', months: [9, 3], category: 'Safety & Security' },
+        { id: 'RT-008', name: 'Water Quality Testing', months: [10, 2, 6], category: 'Plumbing' },
+        { id: 'RT-009', name: 'Pest Control Service', months: [8, 10, 0, 2, 4, 6], category: 'Cleaning' },
+        { id: 'RT-010', name: 'Generator Maintenance', months: [11, 5], category: 'Electrical' },
+        { id: 'RT-011', name: 'Roof & Drainage Inspection', months: [7, 11], category: 'Civil/Building' },
+        { id: 'RT-012', name: 'AC Deep Cleaning', months: [7, 5], category: 'HVAC/AC' },
+        { id: 'RT-013', name: 'Paint Touch-up & Repairs', months: [6, 7], category: 'Painting' },
+        { id: 'RT-014', name: 'Furniture & Fixtures Check', months: [7], category: 'Furniture' }
     ];
     
+    // Store for global access
+    window.recurringTasks = recurringTasks;
+    
     let html = '';
-    recurringTasks.forEach(task => {
+    recurringTasks.forEach((task, taskIndex) => {
         html += `<tr style="border-bottom:1px solid #e0e0e0;">`;
-        html += `<td style="padding:16px 8px; font-weight:600; color:#0D1B2A; position:sticky; left:0; background:white; z-index:1; border-right:2px solid #e0e0e0;">${task.name}</td>`;
+        html += `<td style="padding:16px 8px; font-weight:600; color:#0D1B2A; position:sticky; left:0; background:white; z-index:1; border-right:2px solid #e0e0e0;">`;
+        html += `<div style="cursor:pointer;" onclick="viewRecurringTaskDetails('${task.id}')" title="Click to view/edit details">`;
+        html += `${task.name} <span style="color:#666; font-size:12px; font-weight:400;">📝</span>`;
+        html += `</div></td>`;
         
         // 12 months (Sep to Aug: 8,9,10,11,0,1,2,3,4,5,6,7)
         const monthOrder = [8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7];
-        monthOrder.forEach(monthIndex => {
+        const monthNames = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+        
+        monthOrder.forEach((monthIndex, colIndex) => {
             const isScheduled = task.months.includes(monthIndex);
+            const monthName = monthNames[colIndex];
+            
             if (isScheduled) {
-                html += `<td style="padding:12px; text-align:center; background:#10B981; color:white; font-size:18px;">✓</td>`;
+                html += `<td style="padding:12px; text-align:center; background:#10B981; color:white; font-size:18px; cursor:pointer;" `;
+                html += `onclick="editScheduledTask('${task.id}', ${monthIndex}, '${monthName}')" `;
+                html += `title="Click to add notes for ${task.name} in ${monthName}">`;
+                html += `✓</td>`;
             } else {
-                html += `<td style="padding:12px; text-align:center; background:#f3f4f6; color:#9ca3af;">—</td>`;
+                html += `<td style="padding:12px; text-align:center; background:#f3f4f6; color:#9ca3af; cursor:pointer;" `;
+                html += `onclick="addRecurringTask('${task.id}', ${monthIndex}, '${monthName}')" `;
+                html += `title="Click to schedule ${task.name} in ${monthName}">`;
+                html += `—</td>`;
             }
         });
         
@@ -1519,16 +1535,155 @@ window.renderDailyCalendar = function() {
         });
         
         if (tasksForDay.length > 0) {
-            html += `<div style="font-size:11px; background:${isToday ? 'rgba(255,255,255,0.2)' : '#FEF3C7'}; padding:4px 6px; border-radius:4px; margin-top:4px;">`;
+            html += `<div style="font-size:11px; background:${isToday ? 'rgba(255,255,255,0.2)' : '#FEF3C7'}; padding:4px 6px; border-radius:4px; margin-top:4px; cursor:pointer;" onclick="viewDayTasks('${dateStr}')" title="Click to view tasks">`;
             html += `📋 ${tasksForDay.length} task${tasksForDay.length > 1 ? 's' : ''}`;
             html += `</div>`;
         }
+        
+        // Add button to add new task
+        html += `<div style="font-size:20px; position:absolute; bottom:8px; right:8px; cursor:pointer; opacity:0.6; transition:opacity 0.2s;" `;
+        html += `onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" `;
+        html += `onclick="addTaskToDay('${dateStr}', ${day}, ${actualMonth}, ${year})" `;
+        html += `title="Add task to this day">`;
+        html += `➕</div>`;
         
         html += `</div>`;
     }
     
     html += '</div>';
     container.innerHTML = html;
+};
+
+// ========================================
+// Schedule Interactive Functions
+// ========================================
+
+// View Recurring Task Details (Annual View)
+window.viewRecurringTaskDetails = function(taskId) {
+    const task = window.recurringTasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const scheduledMonths = task.months.map(m => monthNames[m]).join(', ');
+    
+    const message = `📋 Task: ${task.name}\n\n` +
+                    `📂 Category: ${task.category}\n` +
+                    `📅 Scheduled Months: ${scheduledMonths}\n` +
+                    `🔄 Frequency: ${task.months.length}x per year\n\n` +
+                    `💡 Click on any checkmark (✓) to add notes or update status.`;
+    
+    alert(message);
+};
+
+// Edit Scheduled Task (Annual View - Green checkmark)
+window.editScheduledTask = async function(taskId, monthIndex, monthName) {
+    const task = window.recurringTasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const notes = prompt(`✏️ Add notes for:\n\n📋 ${task.name}\n📅 ${monthName}\n\nEnter your notes or comments:`);
+    
+    if (notes !== null && notes.trim()) {
+        try {
+            showSyncStatus('Saving notes...', 'syncing');
+            
+            // Save to Firestore under a new collection for schedule notes
+            const scheduleNotesRef = collection(db, 'schedule_notes');
+            const noteData = {
+                taskId: taskId,
+                taskName: task.name,
+                month: monthIndex,
+                monthName: monthName,
+                notes: notes.trim(),
+                createdBy: window.currentUser.name,
+                createdAt: Date.now(),
+                academicYear: '2025-2026'
+            };
+            
+            await setDoc(doc(scheduleNotesRef, `${taskId}_${monthIndex}`), noteData);
+            
+            showSyncStatus('✅ Notes saved', 'synced');
+            alert(`✅ Notes saved for ${task.name} in ${monthName}`);
+        } catch (error) {
+            console.error('Error saving notes:', error);
+            showSyncStatus('❌ Failed to save notes', 'error');
+            alert('❌ Failed to save notes. Please try again.');
+        }
+    }
+};
+
+// Add Recurring Task to Month (Annual View - Gray dash)
+window.addRecurringTask = async function(taskId, monthIndex, monthName) {
+    const task = window.recurringTasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const confirm = window.confirm(`📅 Schedule this task?\n\n📋 ${task.name}\n📅 ${monthName}\n\nThis will add it to the schedule.`);
+    
+    if (confirm) {
+        alert(`✅ Task scheduled for ${monthName}!\n\n💡 In a full version, this would:\n` +
+              `1. Update the recurring schedule\n` +
+              `2. Create a task entry\n` +
+              `3. Send notifications\n\n` +
+              `⚠️ For safety, this is currently read-only.`);
+    }
+};
+
+// View Tasks for a Specific Day (Daily View - Task indicator click)
+window.viewDayTasks = function(dateStr) {
+    const tasksForDay = window.allTasks.filter(task => {
+        return task.dateReported === dateStr || task.dueDate === dateStr || task.dateCompleted === dateStr;
+    });
+    
+    if (tasksForDay.length === 0) {
+        alert('📋 No tasks found for this day');
+        return;
+    }
+    
+    let message = `📅 Tasks for ${dateStr}:\n\n`;
+    tasksForDay.forEach((task, index) => {
+        message += `${index + 1}. ${task.title}\n`;
+        message += `   Status: ${task.status}\n`;
+        message += `   Priority: ${task.priority}\n`;
+        if (task.notes) {
+            message += `   Notes: ${task.notes}\n`;
+        }
+        message += `\n`;
+    });
+    
+    message += `\n💡 Go to Tasks page to edit these tasks.`;
+    
+    alert(message);
+};
+
+// Add Task to Specific Day (Daily View - Plus button)
+window.addTaskToDay = function(dateStr, day, month, year) {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dateDisplay = `${day} ${monthNames[month]} ${year}`;
+    
+    const confirm = window.confirm(`➕ Add a new task?\n\n📅 Date: ${dateDisplay}\n\nThis will open the Add Task form with the date pre-filled.`);
+    
+    if (confirm) {
+        // Pre-fill the add task modal with this date
+        window.scheduledDate = dateStr;
+        
+        // Show add task modal
+        const modal = document.getElementById('addTaskModal');
+        if (modal) {
+            modal.classList.add('active');
+            
+            // Pre-fill date reported field
+            const dateReportedInput = document.getElementById('taskDateReported');
+            if (dateReportedInput) {
+                dateReportedInput.value = dateStr;
+            }
+            
+            // Clear scheduled date after modal opens
+            setTimeout(() => {
+                delete window.scheduledDate;
+            }, 1000);
+        } else {
+            alert('✅ Task form not found. Please go to Tasks page to add a new task with date: ' + dateStr);
+        }
+    }
 };
 
 // ========================================

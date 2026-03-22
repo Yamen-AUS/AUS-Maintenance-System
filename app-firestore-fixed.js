@@ -1372,24 +1372,37 @@ async function loadSchedule() {
     }
 }
 
-// Show Schedule View (Annual or Daily)
+// Show Schedule View (Annual, Daily, or Notes)
 window.showScheduleView = function(viewType) {
     const annualView = document.getElementById('annualScheduleView');
     const dailyView = document.getElementById('dailyScheduleView');
+    const notesView = document.getElementById('notesScheduleView');
     const annualBtn = document.getElementById('annualViewBtn');
     const dailyBtn = document.getElementById('dailyViewBtn');
+    const notesBtn = document.getElementById('notesViewBtn');
     
+    // Hide all views first
+    annualView.style.display = 'none';
+    dailyView.style.display = 'none';
+    notesView.style.display = 'none';
+    
+    // Reset all buttons to gray
+    annualBtn.style.background = '#6c757d';
+    dailyBtn.style.background = '#6c757d';
+    notesBtn.style.background = '#6c757d';
+    
+    // Show selected view and highlight button
     if (viewType === 'annual') {
         annualView.style.display = 'block';
-        dailyView.style.display = 'none';
         annualBtn.style.background = '#2563A8';
-        dailyBtn.style.background = '#6c757d';
-    } else {
-        annualView.style.display = 'none';
+    } else if (viewType === 'daily') {
         dailyView.style.display = 'block';
-        annualBtn.style.background = '#6c757d';
         dailyBtn.style.background = '#2563A8';
         renderDailyCalendar();
+    } else if (viewType === 'notes') {
+        notesView.style.display = 'block';
+        notesBtn.style.background = '#2563A8';
+        renderNotesCalendar();
     }
 };
 
@@ -1683,6 +1696,198 @@ window.addTaskToDay = function(dateStr, day, month, year) {
         } else {
             alert('✅ Task form not found. Please go to Tasks page to add a new task with date: ' + dateStr);
         }
+    }
+};
+
+// ========================================
+// Notes Calendar (Daily Maintenance Notes)
+// ========================================
+
+// Render Notes Calendar
+window.renderNotesCalendar = async function() {
+    const container = document.getElementById('notesCalendarGrid');
+    const monthSelector = document.getElementById('notesCalendarMonth');
+    if (!container || !monthSelector) return;
+    
+    const selectedMonth = parseInt(monthSelector.value);
+    
+    // Map to actual month
+    let actualMonth, year;
+    if (selectedMonth < 4) { // Sep-Dec 2025
+        actualMonth = selectedMonth + 8;
+        year = 2025;
+    } else { // Jan-Aug 2026
+        actualMonth = selectedMonth - 4;
+        year = 2026;
+    }
+    
+    // Load saved notes from Firestore
+    window.dailyNotes = {};
+    try {
+        const notesSnapshot = await getDocs(collection(db, 'daily_notes'));
+        notesSnapshot.forEach(docSnap => {
+            const note = docSnap.data();
+            window.dailyNotes[note.date] = note;
+        });
+    } catch (error) {
+        console.error('Error loading notes:', error);
+    }
+    
+    // Get days in month
+    const daysInMonth = new Date(year, actualMonth + 1, 0).getDate();
+    const firstDay = new Date(year, actualMonth, 1).getDay();
+    
+    // Days of week
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    let html = '<div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px;">';
+    
+    // Header
+    daysOfWeek.forEach(day => {
+        html += `<div style="padding:12px; background:#0D1B2A; color:white; text-align:center; font-weight:600; border-radius:8px;">${day}</div>`;
+    });
+    
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+        html += `<div style="padding:20px; background:#f9fafb; border-radius:8px;"></div>`;
+    }
+    
+    // Days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = (day === new Date().getDate() && actualMonth === new Date().getMonth() && year === new Date().getFullYear());
+        const dateStr = `${year}-${String(actualMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        const hasNote = window.dailyNotes[dateStr];
+        
+        let bgColor = 'white';
+        let borderColor = '#e0e0e0';
+        
+        if (isToday) {
+            bgColor = '#dbeafe';
+            borderColor = '#2563A8';
+        } else if (hasNote) {
+            bgColor = '#fef3c7';
+            borderColor = '#f59e0b';
+        }
+        
+        html += `<div style="padding:12px; background:${bgColor}; border:2px solid ${borderColor}; border-radius:8px; min-height:120px; position:relative; cursor:pointer; transition:all 0.2s;" `;
+        html += `onclick="openDailyNoteModal('${dateStr}', ${day}, ${actualMonth}, ${year})" `;
+        html += `onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';" `;
+        html += `onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';" `;
+        html += `title="Click to ${hasNote ? 'edit' : 'add'} notes">`;
+        
+        // Day number
+        html += `<div style="font-weight:700; font-size:18px; color:#0D1B2A; margin-bottom:8px;">${day}</div>`;
+        
+        // Note indicator or add button
+        if (hasNote) {
+            const notePreview = hasNote.notes.substring(0, 50) + (hasNote.notes.length > 50 ? '...' : '');
+            html += `<div style="font-size:11px; color:#666; line-height:1.4; margin-bottom:8px;">${notePreview}</div>`;
+            html += `<div style="position:absolute; bottom:8px; right:8px; background:#10B981; color:white; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:600;">`;
+            html += `📝 HAS NOTE</div>`;
+        } else {
+            html += `<div style="position:absolute; bottom:8px; right:8px; background:#3b82f6; color:white; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:600;">`;
+            html += `➕ ADD NOTE</div>`;
+        }
+        
+        html += `</div>`;
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+};
+
+// Open Daily Note Modal
+window.openDailyNoteModal = function(dateStr, day, month, year) {
+    const modal = document.getElementById('dailyNoteModal');
+    if (!modal) return;
+    
+    // Store current date for saving
+    window.currentNoteDate = dateStr;
+    
+    // Set modal title with date
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayOfWeek = new Date(year, month, day).getDay();
+    
+    document.getElementById('noteModalDate').textContent = `${monthNames[month]} ${day}, ${year}`;
+    document.getElementById('noteModalDay').textContent = dayNames[dayOfWeek];
+    
+    // Load existing note if any
+    const existingNote = window.dailyNotes[dateStr];
+    document.getElementById('dailyNoteText').value = existingNote ? existingNote.notes : '';
+    
+    // Show modal
+    modal.classList.add('active');
+};
+
+// Close Daily Note Modal
+window.closeDailyNoteModal = function() {
+    const modal = document.getElementById('dailyNoteModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.getElementById('dailyNoteText').value = '';
+        delete window.currentNoteDate;
+    }
+};
+
+// Save Daily Note
+window.saveDailyNote = async function() {
+    const noteText = document.getElementById('dailyNoteText').value.trim();
+    const dateStr = window.currentNoteDate;
+    
+    if (!dateStr) {
+        alert('❌ Error: No date selected');
+        return;
+    }
+    
+    if (!noteText) {
+        // Ask if they want to delete the note
+        const confirmDelete = confirm('Note is empty. Do you want to delete this note?');
+        if (confirmDelete && window.dailyNotes[dateStr]) {
+            try {
+                showSyncStatus('Deleting note...', 'syncing');
+                await deleteDoc(doc(db, 'daily_notes', dateStr));
+                delete window.dailyNotes[dateStr];
+                showSyncStatus('✅ Note deleted', 'synced');
+                closeDailyNoteModal();
+                renderNotesCalendar();
+            } catch (error) {
+                console.error('Error deleting note:', error);
+                showSyncStatus('❌ Failed to delete note', 'error');
+            }
+        }
+        return;
+    }
+    
+    try {
+        showSyncStatus('Saving note...', 'syncing');
+        
+        const noteData = {
+            date: dateStr,
+            notes: noteText,
+            createdBy: window.currentUser.name,
+            createdAt: window.dailyNotes[dateStr] ? window.dailyNotes[dateStr].createdAt : Date.now(),
+            updatedAt: Date.now(),
+            updatedBy: window.currentUser.name,
+            academicYear: '2025-2026'
+        };
+        
+        // Save to Firestore
+        await setDoc(doc(db, 'daily_notes', dateStr), noteData);
+        
+        // Update local cache
+        window.dailyNotes[dateStr] = noteData;
+        
+        showSyncStatus('✅ Note saved successfully', 'synced');
+        closeDailyNoteModal();
+        renderNotesCalendar();
+        
+    } catch (error) {
+        console.error('Error saving note:', error);
+        showSyncStatus('❌ Failed to save note', 'error');
+        alert('❌ Failed to save note. Please try again.');
     }
 };
 

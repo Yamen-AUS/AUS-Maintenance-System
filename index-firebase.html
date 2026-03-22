@@ -1142,6 +1142,9 @@ Features:
                     <button onclick="showScheduleView('daily')" id="dailyViewBtn" style="padding:12px 24px; background:#6c757d; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;">
                         Daily View
                     </button>
+                    <button onclick="showScheduleView('notes')" id="notesViewBtn" style="padding:12px 24px; background:#6c757d; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;">
+                        📝 Notes View
+                    </button>
                 </div>
 
                 <!-- Annual Schedule View -->
@@ -1194,6 +1197,37 @@ Features:
                     </div>
                     <div id="dailyCalendarGrid" style="background:white; padding:24px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
                         <!-- Calendar will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Notes View (Daily Maintenance Notes) -->
+                <div id="notesScheduleView" style="display:none;">
+                    <div style="background:white; padding:20px; border-radius:12px; margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <label style="font-weight:600; color:#0D1B2A;">Month:</label>
+                                <select id="notesCalendarMonth" onchange="renderNotesCalendar()" style="padding:10px 16px; border:2px solid #e0e0e0; border-radius:8px; font-size:14px;">
+                                    <option value="0">September 2025</option>
+                                    <option value="1">October 2025</option>
+                                    <option value="2">November 2025</option>
+                                    <option value="3">December 2025</option>
+                                    <option value="4">January 2026</option>
+                                    <option value="5">February 2026</option>
+                                    <option value="6">March 2026</option>
+                                    <option value="7">April 2026</option>
+                                    <option value="8">May 2026</option>
+                                    <option value="9">June 2026</option>
+                                    <option value="10">July 2026</option>
+                                    <option value="11">August 2026</option>
+                                </select>
+                            </div>
+                            <div style="color:#666; font-size:14px;">
+                                📝 Click any day to add or edit maintenance notes
+                            </div>
+                        </div>
+                    </div>
+                    <div id="notesCalendarGrid" style="background:white; padding:24px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                        <!-- Notes calendar will be rendered here -->
                     </div>
                 </div>
             </div>
@@ -1458,6 +1492,30 @@ Features:
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" onclick="closeVendorModal()">Cancel</button>
                     <button type="button" class="btn-primary" onclick="saveVendor()">Add Vendor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Daily Notes Modal -->
+    <div class="modal" id="dailyNoteModal">
+        <div class="modal-content" style="max-width:600px;">
+            <h3>📝 Daily Maintenance Notes</h3>
+            <div style="background:#f0f9ff; border-left:4px solid #2563A8; padding:12px; margin-bottom:20px; border-radius:4px;">
+                <div style="font-weight:600; color:#0D1B2A; margin-bottom:4px;" id="noteModalDate">Date</div>
+                <div style="font-size:14px; color:#666;" id="noteModalDay">Day</div>
+            </div>
+            <form id="dailyNoteForm" onsubmit="return false;">
+                <div class="form-group">
+                    <label>Maintenance Notes</label>
+                    <textarea id="dailyNoteText" rows="8" placeholder="Write your daily maintenance notes here..." style="width:100%; padding:12px; border:2px solid #e0e0e0; border-radius:8px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
+                </div>
+                <div style="font-size:12px; color:#666; margin-top:8px;">
+                    💡 These notes will be saved automatically and can be viewed/edited anytime.
+                </div>
+                <div class="modal-actions" style="margin-top:20px;">
+                    <button type="button" class="btn-secondary" onclick="closeDailyNoteModal()">Cancel</button>
+                    <button type="button" class="btn-primary" onclick="saveDailyNote()">💾 Save Note</button>
                 </div>
             </form>
         </div>
